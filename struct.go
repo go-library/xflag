@@ -1,18 +1,14 @@
 package xflag
 
 import (
-	"flag"
 	"fmt"
-	//"os"
 	"reflect"
-	"strconv"
 	"strings"
-	"time"
 	"unsafe"
 )
 
 func canFlagValue(v reflect.Value) (ok bool) {
-	var fv *flag.Value
+	var fv *Value
 	t := reflect.TypeOf(fv).Elem()
 	return v.Type().Implements(t)
 }
@@ -23,7 +19,7 @@ func canFlagValue(v reflect.Value) (ok bool) {
   @ xflag-default
   @ xflag-usage
 */
-func NewFlagSetFromStruct(opt interface{}) (fs *flag.FlagSet, err error) {
+func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 
 	optValue := reflect.ValueOf(opt)
 	if optValue.Kind() != reflect.Ptr {
@@ -37,19 +33,24 @@ func NewFlagSetFromStruct(opt interface{}) (fs *flag.FlagSet, err error) {
 
 	t := optValue.Type()
 
-	fs = flag.NewFlagSet(t.Name(), flag.ContinueOnError)
+	fs = NewFlagSet(t.Name())
 
 	for i := 0; i < t.NumField(); i++ {
 		var (
 			field      = t.Field(i)
 			fieldValue = optValue.Field(i)
-			name       = strings.ToLower(field.Name)
+			short      = ""
+			long       = ""
 			usage      = ""
 			defValue   = ""
 		)
 
-		if v, ok := field.Tag.Lookup("xflag-name"); ok {
-			name = v
+		if v, ok := field.Tag.Lookup("xflag-short"); ok {
+			short = v
+		}
+
+		if v, ok := field.Tag.Lookup("xflag-long"); ok {
+			long = v
 		}
 
 		if v, ok := field.Tag.Lookup("xflag-default"); ok {
@@ -60,71 +61,56 @@ func NewFlagSetFromStruct(opt interface{}) (fs *flag.FlagSet, err error) {
 			usage = v
 		}
 
+		if short == "" && long == "" {
+			long = strings.ToLower(field.Name)
+		}
+
 		ptr := fieldValue.UnsafeAddr()
 
 		typeName := fmt.Sprintf("%s/%s", field.Type.PkgPath(), field.Type.Name())
 
 		kind := fieldValue.Kind()
 
+		var v Value
 		switch {
+		// interface Value
 		case canFlagValue(fieldValue):
-			v := fieldValue.Interface().(flag.Value)
-			fs.Var(v, name, usage)
+			v = fieldValue.Interface().(Value)
+		// time.Duration
 		case typeName == "time/Duration":
-			var v time.Duration
-			if defValue != "" {
-				v, err = time.ParseDuration(defValue)
-				if err != nil {
-					return nil, err
-				}
-			}
-			fs.DurationVar((*time.Duration)(unsafe.Pointer(ptr)), name, v, usage)
+			v = (*DurationValue)(unsafe.Pointer(ptr))
+		// bool
 		case kind == reflect.Bool:
-			var v bool
-			if defValue != "" {
-				defValue = strings.ToLower(defValue)
-				switch defValue {
-				case "true", "t":
-					v = true
-				case "false", "f":
-					v = false
-				}
-			}
-			fs.BoolVar((*bool)(unsafe.Pointer(ptr)), name, v, usage)
+			v = (*BoolValue)(unsafe.Pointer(ptr))
+		// flat64
 		case kind == reflect.Float64:
-			var v float64
-			if defValue != "" {
-				v, err = strconv.ParseFloat(defValue, 64)
-				if err != nil {
-					return nil, err
-				}
-			}
-			fs.Float64Var((*float64)(unsafe.Pointer(ptr)), name, v, usage)
+			v = (*Float64Value)(unsafe.Pointer(ptr))
+		// int
 		case kind == reflect.Int:
-			var v int64
-			if defValue != "" {
-				v, err = strconv.ParseInt(defValue, 10, 32)
-				if err != nil {
-					return nil, err
-				}
-			}
-			fs.IntVar((*int)(unsafe.Pointer(ptr)), name, int(v), usage)
+			v = (*IntValue)(unsafe.Pointer(ptr))
+		// int64
 		case kind == reflect.Int64:
-			var v int64
-			if defValue != "" {
-				v, err = strconv.ParseInt(defValue, 10, 64)
-				if err != nil {
-					return nil, err
-				}
-			}
-			fs.Int64Var((*int64)(unsafe.Pointer(ptr)), name, v, usage)
+			v = (*Int64Value)(unsafe.Pointer(ptr))
+		// uint
+		case kind == reflect.Uint:
+			v = (*UintValue)(unsafe.Pointer(ptr))
+		// uint64
+		case kind == reflect.Uint64:
+			v = (*Uint64Value)(unsafe.Pointer(ptr))
+		// string
 		case kind == reflect.String:
-			fs.StringVar((*string)(unsafe.Pointer(ptr)), name, defValue, usage)
-		case kind == reflect.Slice && field.Type.Elem().Kind() == reflect.String: // []string
-			fs.Var((*StringList)(unsafe.Pointer(ptr)), name, usage)
+			v = (*StringValue)(unsafe.Pointer(ptr))
+		// []bool
+		case kind == reflect.Slice && field.Type.Elem().Kind() == reflect.Bool:
+			v = (*BoolSliceValue)(unsafe.Pointer(ptr))
+		// []string
+		case kind == reflect.Slice && field.Type.Elem().Kind() == reflect.String:
+			v = (*StringSliceValue)(unsafe.Pointer(ptr))
+		// error
 		default:
 			return nil, fmt.Errorf("unsupported type: %v", field.Type)
 		}
+		fs.Var(v, short, long, defValue, usage)
 	}
 
 	return fs, nil
