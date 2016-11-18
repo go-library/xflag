@@ -225,7 +225,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 
 	// set default values
 	err = f.Visit(func(f *Flag) error {
-		if !f.IsSet {
+		if !f.IsSet && f.DefValue != "" {
 			err = f.Value.Set(f.DefValue)
 			if err != nil {
 				return err

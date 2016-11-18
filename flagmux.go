@@ -1,26 +1,29 @@
 package xflag
 
 import (
-	"flag"
 	"fmt"
-	"os"
 )
 
 type FlagSetMux struct {
-	Command string
-	*flag.FlagSet
-	flags map[string]*flag.FlagSet
+	*FlagSet
+
+	CommandName string
+	Commands    map[string]*FlagSet
 }
 
-func NewFlagSetMux() (m *FlagSetMux) {
-	m = new(FlagSetMux)
-	m.flags = make(map[string]*flag.FlagSet)
-	m.FlagSet = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+func NewFlagSetMux(fs *FlagSet) (m *FlagSetMux) {
+	m = &FlagSetMux{
+		FlagSet: fs,
+	}
 	return m
 }
 
-func (m *FlagSetMux) AddFlagSet(name string, fs *flag.FlagSet) {
-	m.flags[name] = fs
+func (m *FlagSetMux) AddFlagSet(fs *FlagSet) {
+	if m.Commands == nil {
+		m.Commands = make(map[string]*FlagSet)
+	}
+
+	m.Commands[fs.Name] = fs
 }
 
 func (m *FlagSetMux) Parse(arguments []string) (err error) {
@@ -31,13 +34,13 @@ func (m *FlagSetMux) Parse(arguments []string) (err error) {
 
 	subArgs := m.FlagSet.Args()
 	if len(subArgs) >= 1 {
-		m.Command = subArgs[0]
+		m.CommandName = subArgs[0]
 		subArgs = subArgs[1:]
-		if _, ok := m.flags[m.Command]; !ok {
-			return fmt.Errorf("there is no matched flagset: %v", m.Command)
+		if _, ok := m.Commands[m.CommandName]; !ok {
+			return fmt.Errorf("there is no matched flagset: %v", m.CommandName)
 		}
 
-		err = m.flags[m.Command].Parse(subArgs)
+		err = m.Commands[m.CommandName].Parse(subArgs)
 		if err != nil {
 			return err
 		}
