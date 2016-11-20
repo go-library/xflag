@@ -125,7 +125,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			window = window[1:]
 			isFinished = true
 
-		case window[0][:2] == "--":
+		case strings.HasPrefix(window[0], "--"):
 			// --* long flags
 			terms := strings.SplitN(window[0][2:], "=", 2)
 
@@ -167,7 +167,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			}
 			window = window[shift:]
 
-		case window[0][:1] == "-":
+		case strings.HasPrefix(window[0], "-"):
 			shift = 1
 			// -* short flags
 			opt := window[0][1:]
