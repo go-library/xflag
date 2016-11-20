@@ -22,7 +22,8 @@ type Flag struct {
 }
 
 type FlagSet struct {
-	Name string
+	Name       string
+	PrintUsage func()
 
 	shortFlags map[string]*Flag
 	longFlags  map[string]*Flag
@@ -119,6 +120,14 @@ func (f *FlagSet) Parse(args []string) (err error) {
 		}
 
 		switch {
+		case window[0] == "-h" || window[0] == "--help":
+			if f.PrintUsage == nil {
+				fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+				f.PrintDefaults()
+			} else {
+				f.PrintUsage()
+			}
+			return fmt.Errorf("%s flag help requested", f.Name)
 
 		case window[0] == "--":
 			// -- terminator
@@ -269,7 +278,7 @@ func (a ByName) Less(i, j int) bool {
 	return 0 > strings.Compare(istr, jstr)
 }
 
-func (f *FlagSet) PrintUsage() {
+func (f *FlagSet) PrintDefaults() {
 	var flags []*Flag
 
 	f.Visit(func(f *Flag) error {
@@ -278,7 +287,6 @@ func (f *FlagSet) PrintUsage() {
 	})
 
 	sort.Sort(ByName(flags))
-	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 
 	var short, long string
 	for _, f := range flags {

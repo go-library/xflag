@@ -9,12 +9,14 @@ func TestFlagSetMux(t *testing.T) {
 		verbose bool
 	}
 
+	m := &FlagSetMux{}
+
 	fs, err := NewFlagSetFromStruct(&Opt{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	m := NewFlagSetMux(fs)
+	m.SetMainFlagSet(fs)
 
 	type SubCommand struct {
 		enable bool
