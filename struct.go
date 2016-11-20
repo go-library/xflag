@@ -46,19 +46,19 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 		)
 
 		if v, ok := field.Tag.Lookup("xflag-short"); ok {
-			short = v
+			short = strings.TrimSpace(v)
 		}
 
 		if v, ok := field.Tag.Lookup("xflag-long"); ok {
-			long = v
+			long = strings.TrimSpace(v)
 		}
 
 		if v, ok := field.Tag.Lookup("xflag-default"); ok {
-			defValue = v
+			defValue = strings.TrimSpace(v)
 		}
 
 		if v, ok := field.Tag.Lookup("xflag-usage"); ok {
-			usage = v
+			usage = strings.TrimSpace(v)
 		}
 
 		if short == "" && long == "" {
