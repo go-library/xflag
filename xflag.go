@@ -323,6 +323,7 @@ func splitUsage(usage string) (lines []string) {
 
 	for i := range terms {
 		line = fmt.Sprintf("%s %s", line, terms[i])
+		line = strings.TrimSpace(line)
 		if len(line) > 20 {
 			lines = append(lines, line)
 			line = ""
