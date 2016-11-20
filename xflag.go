@@ -288,6 +288,8 @@ func (f *FlagSet) PrintDefaults() {
 
 	sort.Sort(ByName(flags))
 
+	fmt.Fprintf(os.Stderr, " %2s  %-15s  %s\n", "-h", "--help", "print this message")
+
 	var short, long string
 	for _, f := range flags {
 		if f.Short != "" {
