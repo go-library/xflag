@@ -19,6 +19,7 @@ type Value interface {
 type Flag struct {
 	Short    string
 	Long     string
+	MetaVar  string
 	Usage    string
 	Value    Value
 	DefValue string
@@ -45,10 +46,11 @@ func NewFlagSet(name string) (fs *FlagSet) {
 }
 
 // set Value as flag
-func (f *FlagSet) Var(value Value, short, long, defValue, usage string) (err error) {
+func (f *FlagSet) Var(value Value, short, long, defValue, metaVar, usage string) (err error) {
 	flag := &Flag{
 		Short:    short,
 		Long:     long,
+		MetaVar:  metaVar,
 		Usage:    usage,
 		Value:    value,
 		DefValue: defValue,
@@ -296,16 +298,23 @@ func (f *FlagSet) PrintDefaults() {
 
 	fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", "-h", "--help", "print this message")
 
-	var short, long string
+	var short, long, metaVar string
 	for _, f := range flags {
+
+		if boolFlag, ok := f.Value.(boolTypeFlag); ok && boolFlag.IsBool() {
+			metaVar = ""
+		} else {
+			metaVar = f.MetaVar
+		}
+
 		if f.Short != "" {
-			short = "-" + f.Short
+			short = fmt.Sprintf("-%s %s", f.Short, metaVar)
 		} else {
 			short = ""
 		}
 
 		if f.Long != "" {
-			long = "--" + f.Long
+			long = fmt.Sprintf("--%s=%s", f.Long, metaVar)
 		} else {
 			long = ""
 		}
@@ -314,8 +323,9 @@ func (f *FlagSet) PrintDefaults() {
 		if f.DefValue != "" {
 			lines = append(lines, fmt.Sprintf("(default: %s)", f.DefValue))
 		}
+
 		for i := range lines {
-			fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", short, long, lines[i])
+			fmt.Fprintf(os.Stderr, "  %2s  %-20s  %s\n", short, long, lines[i])
 			if i == 0 {
 				long = ""
 				short = ""

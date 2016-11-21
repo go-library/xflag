@@ -39,6 +39,7 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 			fieldValue = optValue.Field(i)
 			short      = ""
 			long       = ""
+			metaVar    = ""
 			usage      = ""
 			defValue   = ""
 		)
@@ -71,6 +72,10 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 					defValue = strings.TrimSpace(terms[1])
 				}
 			}
+		}
+
+		if metaVar == "" {
+			metaVar = strings.ToUpper(field.Name)
 		}
 
 		if short == "" && long == "" {
@@ -131,7 +136,7 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 		default:
 			return nil, fmt.Errorf("unsupported type: %v", field.Type)
 		}
-		fs.Var(v, short, long, defValue, usage)
+		fs.Var(v, short, long, defValue, metaVar, usage)
 	}
 
 	return fs, nil
