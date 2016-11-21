@@ -15,9 +15,7 @@ func canFlagValue(v reflect.Value) (ok bool) {
 
 /*
   struct tags:
-  @ xflag-name
-  @ xflag-default
-  @ xflag-usage
+	`xfalg:"-s --long some help message... default:..."`
 */
 func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 
@@ -45,20 +43,34 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 			defValue   = ""
 		)
 
-		if v, ok := field.Tag.Lookup("xflag-short"); ok {
-			short = strings.TrimSpace(v)
-		}
+		if v, ok := field.Tag.Lookup("xflag"); ok {
+			remain := v
+			for {
+				terms := strings.SplitN(remain, " ", 2)
+				flag := strings.TrimSpace(terms[0])
 
-		if v, ok := field.Tag.Lookup("xflag-long"); ok {
-			long = strings.TrimSpace(v)
-		}
+				if len(terms) == 2 {
+					remain = terms[1]
+				} else {
+					remain = ""
+				}
 
-		if v, ok := field.Tag.Lookup("xflag-default"); ok {
-			defValue = strings.TrimSpace(v)
-		}
+				if strings.HasPrefix(flag, "--") {
+					long = flag[2:]
+				} else if strings.HasPrefix(flag, "-") {
+					short = flag[1:]
+				} else {
+					break
+				}
+			}
 
-		if v, ok := field.Tag.Lookup("xflag-usage"); ok {
-			usage = strings.TrimSpace(v)
+			if remain != "" {
+				terms := strings.SplitN(remain, " default:", 2)
+				usage = strings.TrimSpace(terms[0])
+				if len(terms) == 2 {
+					defValue = strings.TrimSpace(terms[1])
+				}
+			}
 		}
 
 		if short == "" && long == "" {

@@ -32,8 +32,6 @@ type FlagSet struct {
 	shortFlags map[string]*Flag
 	longFlags  map[string]*Flag
 	args       []string
-
-	subCommands map[string]*FlagSet
 }
 
 func NewFlagSet(name string) (fs *FlagSet) {
@@ -58,19 +56,19 @@ func (f *FlagSet) Var(value Value, short, long, defValue, usage string) (err err
 	}
 
 	if short == "" && long == "" {
-		return fmt.Errorf("%s flag name undefined", f.Name)
+		return fmt.Errorf("%s FlagSet name undefined", f.Name)
 	}
 
 	if short != "" {
 		if _, has := f.shortFlags[short]; has {
-			return fmt.Errorf("%s flag redefined: %s", f.Name, short)
+			return fmt.Errorf("%s FlagSet redefined: %s", f.Name, short)
 		}
 		f.shortFlags[short] = flag
 	}
 
 	if long != "" {
 		if _, has := f.longFlags[long]; has {
-			return fmt.Errorf("%s flag redefined: %s", f.Name, long)
+			return fmt.Errorf("%s FlagSet redefined: %s", f.Name, long)
 		}
 		f.longFlags[long] = flag
 	}
@@ -147,7 +145,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return fmt.Errorf("%s long flag undefined: --%s", f.Name, name)
+				return fmt.Errorf("%s FlagSet undefined: --%s", f.Name, name)
 			}
 
 			// check boolean field
@@ -171,7 +169,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return fmt.Errorf("%s long flag value not provided: --%s", f.Name, name)
+				return fmt.Errorf("%s FlagSet value not provided: --%s", f.Name, name)
 			}
 
 			// set Value
@@ -194,7 +192,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return fmt.Errorf("%s short flag undefined: -%s", f.Name, name)
+					return fmt.Errorf("%s FlagSet undefined: -%s", f.Name, name)
 				}
 
 				// check boolean field
@@ -219,7 +217,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return fmt.Errorf("%s short flag value not provided: -%s", f.Name, name)
+					return fmt.Errorf("%s FlagSet value not provided: -%s", f.Name, name)
 				}
 
 				// set value

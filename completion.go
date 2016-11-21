@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+// if Flag type value has Comple function, it will used for making complete words.
+type Completor interface {
+	Complete(args []string) (words []string, err error)
+}
+
 func PrintCompletions(iface interface{}, args []string) (err error) {
 	var fs *FlagSet
 	switch i := iface.(type) {

@@ -134,7 +134,7 @@ func TestXFlagParse(t *testing.T) {
 
 	{
 		type Opt struct {
-			v bool `xflag-short:"v"`
+			v bool `xflag:"-v --verbose"`
 		}
 
 		opt := &Opt{}
@@ -158,7 +158,7 @@ func TestXFlagParse(t *testing.T) {
 
 	{
 		type Opt struct {
-			str string `xflag-short:"s"`
+			str string `xflag:"-s"`
 		}
 
 		opt := &Opt{}
@@ -182,7 +182,7 @@ func TestXFlagParse(t *testing.T) {
 
 	{
 		type Opt struct {
-			str string `xflag-short:"s"`
+			str string `xflag:"-s"`
 		}
 
 		opt := &Opt{}
@@ -206,7 +206,7 @@ func TestXFlagParse(t *testing.T) {
 
 	{
 		type Opt struct {
-			v []bool `xflag-short:"v"`
+			v []bool `xflag:"-v"`
 		}
 
 		opt := &Opt{}
