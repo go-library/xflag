@@ -288,7 +288,7 @@ func (f *FlagSet) PrintDefaults() {
 
 	sort.Sort(ByName(flags))
 
-	fmt.Fprintf(os.Stderr, " %2s  %-15s  %s\n", "-h", "--help", "print this message")
+	fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", "-h", "--help", "print this message")
 
 	var short, long string
 	for _, f := range flags {
@@ -304,9 +304,13 @@ func (f *FlagSet) PrintDefaults() {
 			long = ""
 		}
 
-		lines := splitUsage(f.Usage)
+		usage := f.Usage
+		if f.DefValue != "" {
+			usage += fmt.Sprintf(" (default: %s)", f.DefValue)
+		}
+		lines := splitUsage(usage)
 		for i := range lines {
-			fmt.Fprintf(os.Stderr, " %2s  %-15s  %s\n", short, long, lines[i])
+			fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", short, long, lines[i])
 			if i == 0 {
 				long = ""
 				short = ""
