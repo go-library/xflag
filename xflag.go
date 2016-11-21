@@ -304,11 +304,10 @@ func (f *FlagSet) PrintDefaults() {
 			long = ""
 		}
 
-		usage := f.Usage
+		lines := splitUsage(f.Usage)
 		if f.DefValue != "" {
-			usage += fmt.Sprintf(" (default: %s)", f.DefValue)
+			lines = append(lines, fmt.Sprintf("(default: %s)", f.DefValue))
 		}
-		lines := splitUsage(usage)
 		for i := range lines {
 			fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", short, long, lines[i])
 			if i == 0 {
