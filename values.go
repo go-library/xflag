@@ -5,29 +5,29 @@ import (
 	"time"
 )
 
-type BoolTypeFlag interface {
+type boolTypeFlag interface {
 	IsBool() bool
 }
 
 // bool
 
-type BoolValue bool
+type boolValue bool
 
-func (b *BoolValue) Set(s string) (err error) {
+func (b *boolValue) Set(s string) (err error) {
 	v, err := strconv.ParseBool(s)
-	*b = BoolValue(v)
+	*b = boolValue(v)
 	return err
 }
 
-func (b *BoolValue) Get() interface{} { return bool(*b) }
+func (b *boolValue) Get() interface{} { return bool(*b) }
 
-func (b *BoolValue) IsBool() bool { return true }
+func (b *boolValue) IsBool() bool { return true }
 
 // []bool
 
-type BoolSliceValue []bool
+type boolSliceValue []bool
 
-func (l *BoolSliceValue) Set(s string) (err error) {
+func (l *boolSliceValue) Set(s string) (err error) {
 	v, err := strconv.ParseBool(s)
 	if err != nil {
 		return err
@@ -36,97 +36,97 @@ func (l *BoolSliceValue) Set(s string) (err error) {
 	return nil
 }
 
-func (l *BoolSliceValue) Get() interface{} { return []bool(*l) }
+func (l *boolSliceValue) Get() interface{} { return []bool(*l) }
 
-func (b *BoolSliceValue) IsBool() bool { return true }
+func (b *boolSliceValue) IsBool() bool { return true }
 
 // int
 
-type IntValue int
+type intValue int
 
-func (i *IntValue) Set(s string) error {
+func (i *intValue) Set(s string) error {
 	v, err := strconv.ParseInt(s, 0, 64)
-	*i = IntValue(v)
+	*i = intValue(v)
 	return err
 }
 
-func (i *IntValue) Get() interface{} { return int(*i) }
+func (i *intValue) Get() interface{} { return int(*i) }
 
 // int64
 
-type Int64Value int64
+type int64Value int64
 
-func (i *Int64Value) Set(s string) error {
+func (i *int64Value) Set(s string) error {
 	v, err := strconv.ParseInt(s, 0, 64)
-	*i = Int64Value(v)
+	*i = int64Value(v)
 	return err
 }
 
-func (i *Int64Value) Get() interface{} { return int64(*i) }
+func (i *int64Value) Get() interface{} { return int64(*i) }
 
 // uint
-type UintValue uint
+type uintValue uint
 
-func (i *UintValue) Set(s string) error {
+func (i *uintValue) Set(s string) error {
 	v, err := strconv.ParseUint(s, 0, 64)
-	*i = UintValue(v)
+	*i = uintValue(v)
 	return err
 }
-func (i *UintValue) Get() interface{} { return uint(*i) }
+func (i *uintValue) Get() interface{} { return uint(*i) }
 
 // uint64
-type Uint64Value uint64
+type uint64Value uint64
 
-func (i *Uint64Value) Set(s string) error {
+func (i *uint64Value) Set(s string) error {
 	v, err := strconv.ParseUint(s, 0, 64)
-	*i = Uint64Value(v)
+	*i = uint64Value(v)
 	return err
 }
 
-func (i *Uint64Value) Get() interface{} { return uint64(*i) }
+func (i *uint64Value) Get() interface{} { return uint64(*i) }
 
 // string
 
-type StringValue string
+type stringValue string
 
-func (s *StringValue) Set(val string) error {
-	*s = StringValue(val)
+func (s *stringValue) Set(val string) error {
+	*s = stringValue(val)
 	return nil
 }
 
-func (s *StringValue) Get() interface{} { return string(*s) }
+func (s *stringValue) Get() interface{} { return string(*s) }
 
 // []string
 
-type StringSliceValue []string
+type stringSliceValue []string
 
-func (l *StringSliceValue) Set(s string) error {
+func (l *stringSliceValue) Set(s string) error {
 	*l = append(*l, s)
 	return nil
 }
 
-func (l *StringSliceValue) Get() interface{} { return []string(*l) }
+func (l *stringSliceValue) Get() interface{} { return []string(*l) }
 
 // flat64
 
-type Float64Value float64
+type float64Value float64
 
-func (f *Float64Value) Set(s string) error {
+func (f *float64Value) Set(s string) error {
 	v, err := strconv.ParseFloat(s, 64)
-	*f = Float64Value(v)
+	*f = float64Value(v)
 	return err
 }
 
-func (f *Float64Value) Get() interface{} { return float64(*f) }
+func (f *float64Value) Get() interface{} { return float64(*f) }
 
 // time.Duration
 
-type DurationValue time.Duration
+type durationValue time.Duration
 
-func (d *DurationValue) Set(s string) (err error) {
+func (d *durationValue) Set(s string) (err error) {
 	v, err := time.ParseDuration(s)
-	*d = DurationValue(v)
+	*d = durationValue(v)
 	return err
 }
 
-func (d *DurationValue) Get() interface{} { return time.Duration(*d) }
+func (d *durationValue) Get() interface{} { return time.Duration(*d) }

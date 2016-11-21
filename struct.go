@@ -65,6 +65,15 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 			long = strings.ToLower(field.Name)
 		}
 
+		// for pointer
+
+		if fieldValue.Kind() == reflect.Ptr {
+			if fieldValue.IsNil() {
+				return nil, fmt.Errorf("pointer field is nil")
+			}
+			fieldValue = fieldValue.Elem()
+		}
+
 		ptr := fieldValue.UnsafeAddr()
 
 		typeName := fmt.Sprintf("%s/%s", field.Type.PkgPath(), field.Type.Name())
@@ -78,34 +87,34 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 			v = fieldValue.Interface().(Value)
 		// time.Duration
 		case typeName == "time/Duration":
-			v = (*DurationValue)(unsafe.Pointer(ptr))
+			v = (*durationValue)(unsafe.Pointer(ptr))
 		// bool
 		case kind == reflect.Bool:
-			v = (*BoolValue)(unsafe.Pointer(ptr))
+			v = (*boolValue)(unsafe.Pointer(ptr))
 		// flat64
 		case kind == reflect.Float64:
-			v = (*Float64Value)(unsafe.Pointer(ptr))
+			v = (*float64Value)(unsafe.Pointer(ptr))
 		// int
 		case kind == reflect.Int:
-			v = (*IntValue)(unsafe.Pointer(ptr))
+			v = (*intValue)(unsafe.Pointer(ptr))
 		// int64
 		case kind == reflect.Int64:
-			v = (*Int64Value)(unsafe.Pointer(ptr))
+			v = (*int64Value)(unsafe.Pointer(ptr))
 		// uint
 		case kind == reflect.Uint:
-			v = (*UintValue)(unsafe.Pointer(ptr))
+			v = (*uintValue)(unsafe.Pointer(ptr))
 		// uint64
 		case kind == reflect.Uint64:
-			v = (*Uint64Value)(unsafe.Pointer(ptr))
+			v = (*uint64Value)(unsafe.Pointer(ptr))
 		// string
 		case kind == reflect.String:
-			v = (*StringValue)(unsafe.Pointer(ptr))
+			v = (*stringValue)(unsafe.Pointer(ptr))
 		// []bool
 		case kind == reflect.Slice && field.Type.Elem().Kind() == reflect.Bool:
-			v = (*BoolSliceValue)(unsafe.Pointer(ptr))
+			v = (*boolSliceValue)(unsafe.Pointer(ptr))
 		// []string
 		case kind == reflect.Slice && field.Type.Elem().Kind() == reflect.String:
-			v = (*StringSliceValue)(unsafe.Pointer(ptr))
+			v = (*stringSliceValue)(unsafe.Pointer(ptr))
 		// error
 		default:
 			return nil, fmt.Errorf("unsupported type: %v", field.Type)

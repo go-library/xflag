@@ -11,7 +11,7 @@ type FlagSetMux struct {
 	Commands    map[string]*FlagSet
 }
 
-func (m *FlagSetMux) SetMainFlagSet(fs *FlagSet) {
+func (m *FlagSetMux) Init(fs *FlagSet) {
 	m.FlagSet = fs
 }
 

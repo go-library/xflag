@@ -5,6 +5,36 @@ import (
 	"time"
 )
 
+func TestXFlagParseIndirect(t *testing.T) {
+	{
+		type Opt struct {
+			number *int
+		}
+
+		var number int
+
+		opt := &Opt{
+			number: &number,
+		}
+		fs, err := NewFlagSetFromStruct(opt)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = fs.Parse([]string{
+			"--number", "10",
+		})
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if number != 10 {
+			t.Error("unexpected value")
+		}
+	}
+}
+
 func TestXFlagParse(t *testing.T) {
 	{
 		type Opt struct {

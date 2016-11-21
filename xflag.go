@@ -46,6 +46,7 @@ func NewFlagSet(name string) (fs *FlagSet) {
 	return f
 }
 
+// set Value as flag
 func (f *FlagSet) Var(value Value, short, long, defValue, usage string) (err error) {
 	flag := &Flag{
 		Short:    short,
@@ -77,6 +78,7 @@ func (f *FlagSet) Var(value Value, short, long, defValue, usage string) (err err
 	return nil
 }
 
+// visit all flag
 func (f *FlagSet) Visit(fn func(*Flag) error) error {
 	var err error
 
@@ -99,13 +101,13 @@ func (f *FlagSet) Visit(fn func(*Flag) error) error {
 	return nil
 }
 
-// -s            bool
-// -s value      w/o bool
-// -sValue       w/o bool
-//
-// --long        bool
-// --long value  w/o bool
-// --long=value  any
+// parse arguments
+// -f           // only boolean
+// -fvalue      // without boolean
+// -f value     // without boolean
+// --flag       // only boolean
+// --flag=value // any type
+// --flag value // without boolean
 func (f *FlagSet) Parse(args []string) (err error) {
 	var (
 		isFinished = false
@@ -149,7 +151,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			}
 
 			// check boolean field
-			if boolFlag, ok := flag.Value.(BoolTypeFlag); ok && boolFlag.IsBool() {
+			if boolFlag, ok := flag.Value.(boolTypeFlag); ok && boolFlag.IsBool() {
 				isBoolFlag = true
 			} else {
 				isBoolFlag = false
@@ -196,7 +198,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				}
 
 				// check boolean field
-				if boolFlag, ok := flag.Value.(BoolTypeFlag); ok && boolFlag.IsBool() {
+				if boolFlag, ok := flag.Value.(boolTypeFlag); ok && boolFlag.IsBool() {
 					isBoolFlag = true
 				} else {
 					isBoolFlag = false
@@ -254,15 +256,16 @@ func (f *FlagSet) Parse(args []string) (err error) {
 	return nil
 }
 
+// return remained arguments
 func (f *FlagSet) Args() []string {
 	return f.args
 }
 
-type ByName []*Flag
+type byName []*Flag
 
-func (a ByName) Len() int      { return len(a) }
-func (a ByName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByName) Less(i, j int) bool {
+func (a byName) Len() int      { return len(a) }
+func (a byName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byName) Less(i, j int) bool {
 	var (
 		istr, jstr string
 	)
@@ -282,6 +285,7 @@ func (a ByName) Less(i, j int) bool {
 	return 0 > strings.Compare(istr, jstr)
 }
 
+// print default values
 func (f *FlagSet) PrintDefaults() {
 	var flags []*Flag
 
@@ -290,7 +294,7 @@ func (f *FlagSet) PrintDefaults() {
 		return nil
 	})
 
-	sort.Sort(ByName(flags))
+	sort.Sort(byName(flags))
 
 	fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", "-h", "--help", "print this message")
 
