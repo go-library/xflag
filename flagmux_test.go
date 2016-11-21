@@ -16,7 +16,7 @@ func TestFlagSetMux(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m.SetMainFlagSet(fs)
+	m.Init(fs)
 
 	type SubCommand struct {
 		enable bool
