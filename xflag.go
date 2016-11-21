@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+var (
+	ErrHelp = fmt.Errorf("help requested")
+)
+
 type Value interface {
 	Set(string) error
 	Get() interface{}
@@ -127,7 +131,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			} else {
 				f.PrintUsage()
 			}
-			return fmt.Errorf("%s flag help requested", f.Name)
+			return ErrHelp
 
 		case window[0] == "--":
 			// -- terminator
@@ -141,7 +145,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return fmt.Errorf("%s long flag undefined: %s", f.Name, name)
+				return fmt.Errorf("%s long flag undefined: --%s", f.Name, name)
 			}
 
 			// check boolean field
@@ -165,7 +169,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return fmt.Errorf("%s long flag value not provided: %s", f.Name, name)
+				return fmt.Errorf("%s long flag value not provided: --%s", f.Name, name)
 			}
 
 			// set Value
@@ -188,7 +192,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return fmt.Errorf("%s short flag undefined: %s", f.Name, name)
+					return fmt.Errorf("%s short flag undefined: -%s", f.Name, name)
 				}
 
 				// check boolean field
@@ -213,7 +217,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return fmt.Errorf("%s short flag value not provided: %s", f.Name, name)
+					return fmt.Errorf("%s short flag value not provided: -%s", f.Name, name)
 				}
 
 				// set value
