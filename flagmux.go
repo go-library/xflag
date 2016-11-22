@@ -2,6 +2,8 @@ package xflag
 
 import (
 	"fmt"
+	"os"
+	"sort"
 )
 
 type FlagSetMux struct {
@@ -13,6 +15,24 @@ type FlagSetMux struct {
 
 func (m *FlagSetMux) Init(fs *FlagSet) {
 	m.FlagSet = fs
+	if m.PrintHelp == nil {
+		m.PrintHelp = func() {
+			fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+			m.PrintDefaults()
+
+			var cmds []string
+			for cmd := range m.Commands {
+				cmds = append(cmds, cmd)
+			}
+
+			sort.Sort(sort.StringSlice(cmds))
+
+			fmt.Fprintf(os.Stderr, "\n  Commands:\n")
+			for _, cmd := range cmds {
+				fmt.Fprintf(os.Stderr, "    - %s\n", cmd)
+			}
+		}
+	}
 }
 
 func (m *FlagSetMux) AddFlagSet(fs *FlagSet) {

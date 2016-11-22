@@ -20,15 +20,15 @@ type Flag struct {
 	Short    string
 	Long     string
 	MetaVar  string
-	Usage    string
+	Help     string
 	Value    Value
 	DefValue string
 	IsSet    bool
 }
 
 type FlagSet struct {
-	Name       string
-	PrintUsage func()
+	Name      string
+	PrintHelp func()
 
 	shortFlags map[string]*Flag
 	longFlags  map[string]*Flag
@@ -46,12 +46,12 @@ func NewFlagSet(name string) (fs *FlagSet) {
 }
 
 // set Value as flag
-func (f *FlagSet) Var(value Value, short, long, defValue, metaVar, usage string) (err error) {
+func (f *FlagSet) Var(value Value, short, long, defValue, metaVar, help string) (err error) {
 	flag := &Flag{
 		Short:    short,
 		Long:     long,
 		MetaVar:  metaVar,
-		Usage:    usage,
+		Help:     help,
 		Value:    value,
 		DefValue: defValue,
 		IsSet:    false,
@@ -127,11 +127,11 @@ func (f *FlagSet) Parse(args []string) (err error) {
 
 		switch {
 		case window[0] == "-h" || window[0] == "--help":
-			if f.PrintUsage == nil {
-				fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+			if f.PrintHelp == nil {
+				fmt.Fprintf(os.Stderr, "Help of %s:\n", os.Args[0])
 				f.PrintDefaults()
 			} else {
-				f.PrintUsage()
+				f.PrintHelp()
 			}
 			return ErrHelp
 
@@ -287,6 +287,7 @@ func (a byName) Less(i, j int) bool {
 
 // print default values
 func (f *FlagSet) PrintDefaults() {
+	const format = "  %-30s  %s\n"
 	var flags []*Flag
 
 	f.Visit(func(f *Flag) error {
@@ -296,36 +297,55 @@ func (f *FlagSet) PrintDefaults() {
 
 	sort.Sort(byName(flags))
 
-	fmt.Fprintf(os.Stderr, "  %2s  %-15s  %s\n", "-h", "--help", "print this message")
+	fmt.Fprintf(os.Stderr, format, "-h --help", "print this message")
 
 	var short, long, metaVar string
 	for _, f := range flags {
-
 		if boolFlag, ok := f.Value.(boolTypeFlag); ok && boolFlag.IsBool() {
 			metaVar = ""
 		} else {
 			metaVar = f.MetaVar
 		}
 
-		if f.Short != "" {
+		// long flag name formating
+		if f.Short != "" && metaVar != "" && f.Long == "" {
 			short = fmt.Sprintf("-%s %s", f.Short, metaVar)
+		} else if f.Short != "" {
+			short = fmt.Sprintf("-%s", f.Short)
 		} else {
 			short = ""
 		}
 
-		if f.Long != "" {
+		// short flag name formating
+		if f.Long != "" && metaVar != "" {
 			long = fmt.Sprintf("--%s=%s", f.Long, metaVar)
+		} else if f.Long != "" {
+			long = fmt.Sprintf("--%s", f.Long)
 		} else {
 			long = ""
 		}
 
-		lines := splitUsage(f.Usage)
+		lines := splitHelp(f.Help)
 		if f.DefValue != "" {
 			lines = append(lines, fmt.Sprintf("(default: %s)", f.DefValue))
 		}
 
+		if len(lines) == 0 {
+			lines = append(lines, "")
+		}
+
 		for i := range lines {
-			fmt.Fprintf(os.Stderr, "  %2s  %-20s  %s\n", short, long, lines[i])
+			var l []string
+
+			if short != "" {
+				l = append(l, short)
+			}
+			if long != "" {
+				l = append(l, long)
+			}
+
+			fmt.Fprintf(os.Stderr, format, strings.Join(l, "  "), lines[i])
+
 			if i == 0 {
 				long = ""
 				short = ""
@@ -334,21 +354,24 @@ func (f *FlagSet) PrintDefaults() {
 	}
 }
 
-func splitUsage(usage string) (lines []string) {
+func splitHelp(help string) (lines []string) {
 	var (
 		line  string
-		terms = strings.Split(usage, " ")
+		terms = strings.Split(help, " ")
 	)
 
 	for i := range terms {
 		line = fmt.Sprintf("%s %s", line, terms[i])
 		line = strings.TrimSpace(line)
-		if len(line) > 20 {
+		if len(line) > 30 {
 			lines = append(lines, line)
 			line = ""
 		}
 	}
-	lines = append(lines, line)
+
+	if line != "" {
+		lines = append(lines, line)
+	}
 
 	return lines
 }

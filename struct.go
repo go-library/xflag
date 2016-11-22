@@ -15,7 +15,7 @@ func canFlagValue(v reflect.Value) (ok bool) {
 
 /*
   struct tags:
-	`xfalg:"-s --long some help message... default:..."`
+	`xfalg:"-s --long some help message..." xflag-default:"default:..." xflag-meta:"LONG"`
 */
 func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 
@@ -40,42 +40,35 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 			short      = ""
 			long       = ""
 			metaVar    = ""
-			usage      = ""
+			help       = ""
 			defValue   = ""
 		)
 
 		if v, ok := field.Tag.Lookup("xflag"); ok {
-			remain := v
-			for {
-				terms := strings.SplitN(remain, " ", 2)
-				flag := strings.TrimSpace(terms[0])
-
-				if len(terms) == 2 {
-					remain = terms[1]
-				} else {
-					remain = ""
-				}
-
-				if strings.HasPrefix(flag, "--") {
-					long = flag[2:]
-				} else if strings.HasPrefix(flag, "-") {
-					short = flag[1:]
-				} else {
-					break
-				}
+			terms := strings.SplitN(v, ",", 3)
+			if len(terms) > 0 {
+				short = terms[0]
 			}
 
-			if remain != "" {
-				terms := strings.SplitN(remain, " default:", 2)
-				usage = strings.TrimSpace(terms[0])
-				if len(terms) == 2 {
-					defValue = strings.TrimSpace(terms[1])
-				}
+			if len(terms) > 1 {
+				long = terms[1]
+			}
+
+			if len(terms) > 2 {
+				metaVar = terms[2]
 			}
 		}
 
+		if v, ok := field.Tag.Lookup("xflag-help"); ok {
+			help = v
+		}
+
+		if v, ok := field.Tag.Lookup("xflag-default"); ok {
+			defValue = v
+		}
+
 		if metaVar == "" {
-			metaVar = strings.ToUpper(field.Name)
+			metaVar = "VALUE"
 		}
 
 		if short == "" && long == "" {
@@ -136,7 +129,11 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 		default:
 			return nil, fmt.Errorf("unsupported type: %v", field.Type)
 		}
-		fs.Var(v, short, long, defValue, metaVar, usage)
+
+		err = fs.Var(v, short, long, defValue, metaVar, help)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return fs, nil
