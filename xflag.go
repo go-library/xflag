@@ -297,7 +297,7 @@ func (f *FlagSet) PrintDefaults() {
 
 	sort.Sort(byName(flags))
 
-	fmt.Fprintf(os.Stderr, format, "-h --help", "print this message")
+	fmt.Fprintf(os.Stderr, format, "-h  --help", "print this message")
 
 	var short, long, metaVar string
 	for _, f := range flags {
@@ -363,7 +363,7 @@ func splitHelp(help string) (lines []string) {
 	for i := range terms {
 		line = fmt.Sprintf("%s %s", line, terms[i])
 		line = strings.TrimSpace(line)
-		if len(line) > 30 {
+		if len(line) > 50 {
 			lines = append(lines, line)
 			line = ""
 		}
