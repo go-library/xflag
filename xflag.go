@@ -7,23 +7,20 @@ import (
 	"strings"
 )
 
-var (
-	ErrHelp = fmt.Errorf("help requested")
-)
-
 type Value interface {
 	Set(string) error
 	Get() interface{}
 }
 
 type Flag struct {
-	Short    string
-	Long     string
-	MetaVar  string
-	Help     string
-	Value    Value
-	DefValue string
-	IsSet    bool
+	Short     string
+	Long      string
+	MetaVar   string
+	Help      string
+	Value     Value
+	DefValue  string
+	IsSet     bool
+	Completor func(args []string) (completes []string)
 }
 
 type FlagSet struct {
@@ -40,6 +37,11 @@ func NewFlagSet(name string) (fs *FlagSet) {
 		Name:       name,
 		shortFlags: make(map[string]*Flag),
 		longFlags:  make(map[string]*Flag),
+	}
+
+	f.PrintHelp = func() {
+		fmt.Fprintf(os.Stderr, "Help of %s:\n", os.Args[0])
+		f.PrintDefaults()
 	}
 
 	return f
@@ -127,13 +129,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 
 		switch {
 		case window[0] == "-h" || window[0] == "--help":
-			if f.PrintHelp == nil {
-				fmt.Fprintf(os.Stderr, "Help of %s:\n", os.Args[0])
-				f.PrintDefaults()
-			} else {
-				f.PrintHelp()
-			}
-			return ErrHelp
+			return NewError(f, nil, ERR_HELP_REQUEST, "")
 
 		case window[0] == "--":
 			// -- terminator
@@ -147,7 +143,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return fmt.Errorf("%s FlagSet undefined: --%s", f.Name, name)
+				return NewError(f, nil, ERR_UNDEFINED, "--"+name)
 			}
 
 			// check boolean field
@@ -171,7 +167,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return fmt.Errorf("%s FlagSet value not provided: --%s", f.Name, name)
+				return NewError(f, flag, ERR_EMPTY_VALUE, "--"+name)
 			}
 
 			// set Value
@@ -194,7 +190,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return fmt.Errorf("%s FlagSet undefined: -%s", f.Name, name)
+					return NewError(f, nil, ERR_UNDEFINED, "-"+name)
 				}
 
 				// check boolean field
@@ -219,7 +215,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return fmt.Errorf("%s FlagSet value not provided: -%s", f.Name, name)
+					return NewError(f, flag, ERR_EMPTY_VALUE, "-"+name)
 				}
 
 				// set value
@@ -374,4 +370,47 @@ func splitHelp(help string) (lines []string) {
 	}
 
 	return lines
+}
+
+func (f *FlagSet) Completions(arguments []string) (completions []string) {
+	var (
+		err error
+	)
+
+	appendFlags := func() {
+		f.Visit(func(flag *Flag) (err error) {
+			if flag.Short != "" {
+				completions = append(completions, fmt.Sprintf("-%s ", flag.Short))
+			}
+
+			if flag.Long != "" {
+				completions = append(completions, fmt.Sprintf("--%s ", flag.Long))
+			}
+
+			return nil
+		})
+	}
+
+	err = f.Parse(arguments)
+	if err, ok := err.(*XFlagError); ok {
+		switch err.Reason {
+		case ERR_HELP_REQUEST:
+			return
+		case ERR_UNDEFINED:
+			appendFlags()
+			return
+		case ERR_EMPTY_VALUE:
+			if err.Flag.Completor != nil {
+				compls := err.Flag.Completor(arguments)
+				completions = append(completions, compls...)
+			}
+			return
+		default:
+			appendFlags()
+			return
+		}
+	}
+
+	appendFlags()
+	return
 }

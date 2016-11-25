@@ -2,51 +2,51 @@ package xflag
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"strings"
+	"text/template"
 )
 
-// if Flag type value has Comple function, it will used for making complete words.
-type Completor interface {
-	Complete(args []string) (words []string, err error)
+type Completer interface {
+	Completions(arguments []string) (completions []string)
 }
 
-func PrintCompletions(iface interface{}, args []string) (err error) {
-	var fs *FlagSet
-	switch i := iface.(type) {
-	case *FlagSet:
-		fs = i
-	case *FlagSetMux:
-		fs = i.FlagSet
-	}
-
-	err = fs.Parse(args)
-
-	if err != nil {
-		return err
-	}
-
-	var complSet []string
-	fs.Visit(func(f *Flag) (err error) {
-		var short = ""
-		var long = ""
-
-		if f.Short != "" {
-			short = "-" + f.Short
+func HelpCompletion(c Completer) {
+	envs := os.Environ()
+	for i := range envs {
+		if strings.HasPrefix(envs[i], "XFLAG_COMPLETION=1") {
+			fmt.Println(strings.Join(c.Completions(os.Args[1:]), " "))
+			os.Exit(0)
 		}
-		if f.Long != "" {
-			long = "--" + f.Long
+		if strings.HasPrefix(envs[i], "XFLAG_COMPLETION_SCRIPT=1") {
+			PrintBashScript()
+			os.Exit(0)
 		}
-
-		compl := fmt.Sprintf("%s %s", short, long)
-		compl = strings.TrimSpace(compl)
-		complSet = append(complSet, compl)
-		return nil
-	})
-
-	for i := range complSet {
-		fmt.Printf("%s ", complSet[i])
 	}
-	fmt.Println()
+}
 
-	return nil
+func PrintBashScript() {
+	templ := `
+CMD="{{.ori}}"
+
+function _{{.base}}(){
+  local cur prev opts
+  COMPREPLY=()
+  CURL="${COMP_WORDS[COMP_CWORD]}"
+  PREV="${COMP_WORDS[COMP_CWORD-1]}"
+  OPTS=$(sh -c "XFLAG_COMPLETION=1 ${COMP_WORDS[*]}")
+  COMPREPLY=( $(compgen -W "${OPTS}" -- ${CURL}) )
+  return 0
+}
+
+complete -F _{{.base}} $CMD
+`
+	data := map[string]interface{}{
+		"ori":  os.Args[0],
+		"base": path.Base(os.Args[0]),
+	}
+
+	t := template.Must(template.New("script").Parse(templ))
+	t.Execute(os.Stdout, data)
 }

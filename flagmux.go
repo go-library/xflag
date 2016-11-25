@@ -6,6 +6,7 @@ import (
 	"sort"
 )
 
+// FlagSet Extented Type
 type FlagSetMux struct {
 	*FlagSet
 
@@ -43,6 +44,7 @@ func (m *FlagSetMux) AddFlagSet(fs *FlagSet) {
 	m.Commands[fs.Name] = fs
 }
 
+// interface... Parser
 func (m *FlagSetMux) Parse(arguments []string) (err error) {
 	err = m.FlagSet.Parse(arguments)
 	if err != nil {
@@ -54,6 +56,7 @@ func (m *FlagSetMux) Parse(arguments []string) (err error) {
 		m.CommandName = subArgs[0]
 		subArgs = subArgs[1:]
 		if _, ok := m.Commands[m.CommandName]; !ok {
+			m.CommandName = ""
 			return fmt.Errorf("there is no matched flagset: %v", m.CommandName)
 		}
 
@@ -62,6 +65,23 @@ func (m *FlagSetMux) Parse(arguments []string) (err error) {
 			return err
 		}
 	}
-
 	return nil
+}
+
+// interface... CompletionPrinter
+func (m *FlagSetMux) Completions(arguments []string) (completions []string) {
+	m.Parse(arguments)
+
+	if m.CommandName == "" {
+		completions = m.FlagSet.Completions(arguments)
+		if len(completions) > 0 {
+			for cmd := range m.Commands {
+				completions = append(completions, cmd)
+			}
+		}
+	} else {
+		completions = m.Commands[m.CommandName].Completions(m.FlagSet.Args()[1:])
+	}
+
+	return
 }
