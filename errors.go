@@ -49,3 +49,23 @@ func IsHelpRequest(err error) bool {
 	}
 	return false
 }
+
+func PrintHelp(err error) {
+	if err, ok := err.(*Error); ok {
+		if err.Code == ERR_HELP_REQUESTED {
+			err.FlagSet.PrintHelp()
+		}
+	}
+}
+
+func IsFlagError(err error) bool {
+	_, ok := err.(*Error)
+	return ok
+}
+
+func GetFlagError(err error) *Error {
+	if err, ok := err.(*Error); ok {
+		return err
+	}
+	return nil
+}
