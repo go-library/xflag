@@ -11,7 +11,7 @@ func TestFlagSetMux(t *testing.T) {
 
 	m := &FlagSetMux{}
 
-	fs, err := NewFlagSetFromStruct(&Opt{})
+	fs, err := NewFlagSetFromStruct("option", &Opt{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func TestFlagSetMux(t *testing.T) {
 		enable bool
 	}
 
-	subfs, err := NewFlagSetFromStruct(&SubCommand{})
+	subfs, err := NewFlagSetFromStruct("command1", &SubCommand{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestFlagSetMux(t *testing.T) {
 
 	err = m.Parse([]string{
 		"--verbose",
-		"SubCommand",
+		"command1",
 		"--enable",
 	})
 
@@ -39,7 +39,7 @@ func TestFlagSetMux(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if m.CommandName != "SubCommand" {
+	if m.CommandName != "command1" {
 		t.Error("not expected command")
 	}
 }

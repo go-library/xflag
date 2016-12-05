@@ -129,7 +129,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 
 		switch {
 		case window[0] == "-h" || window[0] == "--help":
-			return NewError(f, nil, ERR_HELP_REQUEST, "")
+			return NewError(f, nil, ERR_HELP_REQUESTED, nil)
 
 		case window[0] == "--":
 			// -- terminator
@@ -143,7 +143,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return NewError(f, nil, ERR_UNDEFINED, "--"+name)
+				return NewError(f, nil, ERR_UNDEFINED, fmt.Errorf("--%s flag is undefined", name))
 			}
 
 			// check boolean field
@@ -167,7 +167,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return NewError(f, flag, ERR_EMPTY_VALUE, "--"+name)
+				return NewError(f, flag, ERR_EMPTY_VALUE, fmt.Errorf("--%s flag value was not provied", name))
 			}
 
 			// set Value
@@ -190,7 +190,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return NewError(f, nil, ERR_UNDEFINED, "-"+name)
+					return NewError(f, nil, ERR_UNDEFINED, fmt.Errorf("-%s flag is undefined", name))
 				}
 
 				// check boolean field
@@ -215,7 +215,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return NewError(f, flag, ERR_EMPTY_VALUE, "-"+name)
+					return NewError(f, flag, ERR_EMPTY_VALUE, fmt.Errorf("-%s flag value was not provided", name))
 				}
 
 				// set value
@@ -392,9 +392,9 @@ func (f *FlagSet) Completions(arguments []string) (completions []string) {
 	}
 
 	err = f.Parse(arguments)
-	if err, ok := err.(*XFlagError); ok {
-		switch err.Reason {
-		case ERR_HELP_REQUEST:
+	if err, ok := err.(*Error); ok {
+		switch err.Code {
+		case ERR_HELP_REQUESTED:
 			return
 		case ERR_UNDEFINED:
 			appendFlags()

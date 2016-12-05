@@ -17,7 +17,7 @@ func canFlagValue(v reflect.Value) (ok bool) {
   struct tags:
 	`xfalg:"-s --long some help message..." xflag-default:"default:..." xflag-meta:"LONG"`
 */
-func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
+func NewFlagSetFromStruct(name string, opt interface{}) (fs *FlagSet, err error) {
 
 	optValue := reflect.ValueOf(opt)
 	if optValue.Kind() != reflect.Ptr {
@@ -31,7 +31,7 @@ func NewFlagSetFromStruct(opt interface{}) (fs *FlagSet, err error) {
 
 	t := optValue.Type()
 
-	fs = NewFlagSet(t.Name())
+	fs = NewFlagSet(name)
 
 	for i := 0; i < t.NumField(); i++ {
 		var (

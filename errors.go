@@ -4,47 +4,48 @@ import (
 	"fmt"
 )
 
+type ErrorCode uint
+
+type Error struct {
+	error
+	Code    ErrorCode
+	FlagSet *FlagSet
+	Flag    *Flag
+}
+
 type ErrorReason string
 
 const (
-	ERR_HELP_REQUEST = "help requested"
-	ERR_UNDEFINED    = "undefined flag"
-	ERR_EMPTY_VALUE  = "value not provided"
+	ERR_HELP_REQUESTED ErrorCode = iota
+	ERR_UNDEFINED
+	ERR_EMPTY_VALUE
 )
 
-type XFlagError struct {
-	FlagSet *FlagSet
-	Flag    *Flag
-	Reason  ErrorReason
-	Message string
+func NewError(fs *FlagSet, flag *Flag, code ErrorCode, err error) error {
+	return &Error{
+		error:   err,
+		Code:    code,
+		FlagSet: fs,
+		Flag:    flag,
+	}
 }
 
-func NewError(fs *FlagSet, flag *Flag, reason ErrorReason, message string) error {
-	return &XFlagError{fs, flag, reason, message}
-}
-
-func (e *XFlagError) Error() string {
-	if e.FlagSet == nil {
-		return fmt.Sprintf("XFlagError : %s", e.Reason)
-	} else {
-		return fmt.Sprintf("XFlagError (%s): %s: %s", e.FlagSet.Name, e.Reason, e.Message)
+func (e *Error) Error() string {
+	switch {
+	case e.FlagSet != nil && e.Flag != nil:
+		return fmt.Sprintf("(%s(%s): %s", e.FlagSet.Name, e.Flag, e.Error())
+	case e.FlagSet != nil:
+		return fmt.Sprintf("(%s: %s", e.FlagSet.Name, e.Error())
+	default:
+		return e.Error()
 	}
 }
 
 func IsHelpRequest(err error) bool {
-	if err, ok := err.(*XFlagError); ok {
-		if err.Reason == ERR_HELP_REQUEST {
+	if err, ok := err.(*Error); ok {
+		if err.Code == ERR_HELP_REQUESTED {
 			return true
 		}
 	}
-
 	return false
-}
-
-func PrintHelp(err error) {
-	if err, ok := err.(*XFlagError); ok {
-		if err.Reason == ERR_HELP_REQUEST {
-			err.FlagSet.PrintHelp()
-		}
-	}
 }
