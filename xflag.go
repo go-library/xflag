@@ -85,7 +85,7 @@ func (f *FlagSet) String() string {
 	return fmt.Sprintf("FlagSet[%s]", f.Name)
 }
 
-func (f *FlagSet) Var(ifaceValue interface{}, short, long, defValue, help string) (err error) {
+func (f *FlagSet) Bind(ifaceValue interface{}, short, long, defValue, help string) (err error) {
 	// for pointer
 	v := reflect.ValueOf(ifaceValue)
 
