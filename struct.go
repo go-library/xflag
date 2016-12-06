@@ -33,22 +33,22 @@ func NewFlagSetFromStruct(name string, opt interface{}) (fs *FlagSet, err error)
 
 		// struct tag parsing
 		if v, ok := field.Tag.Lookup("xflag"); ok {
-			terms := strings.SplitN(v, ",", 3)
+			terms := strings.SplitN(v, ",", 4)
 			if len(terms) > 0 {
-				short = terms[0]
+				short = strings.TrimSpace(terms[0])
 			}
 
 			if len(terms) > 1 {
-				long = terms[1]
+				long = strings.TrimSpace(terms[1])
 			}
-		}
 
-		if v, ok := field.Tag.Lookup("xflag-help"); ok {
-			help = v
-		}
+			if len(terms) > 2 {
+				defValue = strings.TrimSpace(terms[2])
+			}
 
-		if v, ok := field.Tag.Lookup("xflag-default"); ok {
-			defValue = v
+			if len(terms) > 3 {
+				help = strings.TrimSpace(terms[3])
+			}
 		}
 
 		if short == "" && long == "" {
