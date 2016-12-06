@@ -25,6 +25,18 @@ type Flag struct {
 	Completor func(args []string) (completes []string)
 }
 
+func (f *Flag) String() string {
+	var flags []string
+	if f.Short != "" {
+		flags = append(flags, "-"+f.Short)
+	}
+	if f.Long != "" {
+		flags = append(flags, "--"+f.Long)
+	}
+
+	return fmt.Sprintf("Flag[%s]", strings.Join(flags, ","))
+}
+
 type FlagSet struct {
 	Name      string
 	PrintHelp func()
@@ -53,6 +65,10 @@ func canFlagValue(v reflect.Value) (ok bool) {
 	var fv *Value
 	t := reflect.TypeOf(fv).Elem()
 	return v.Type().Implements(t)
+}
+
+func (f *FlagSet) String() string {
+	return fmt.Sprintf("FlagSet[%s]", f.Name)
 }
 
 func (f *FlagSet) Bind(ifaceValue interface{}, short, long, defValue, help string) (err error) {
@@ -485,15 +501,11 @@ func splitHelp(help string) (lines []string) {
 
 func (f *FlagSet) Completions(arguments []string) (completions []string) {
 	// use prev completor
-
 	if 1 < len(arguments) {
 		prev := arguments[len(arguments)-2]
 		if f.Flag(prev) != nil {
 			flag := f.Flag(prev)
-			if boolFlag, ok := flag.Value.(boolTypeFlag); ok && boolFlag.IsBool() {
-				// boolean flag
-				// show all flags
-			} else {
+			if boolFlag, ok := flag.Value.(boolTypeFlag); !ok || !boolFlag.IsBool() {
 				// common flag
 				if flag.Completor != nil {
 					completions = append(completions, f.Flag(prev).Completor(arguments)...)

@@ -31,9 +31,9 @@ func Errorf(fs *FlagSet, flag *Flag, code ErrorCode, format string, args ...inte
 func (e *Error) Error() string {
 	switch {
 	case e.FlagSet != nil && e.Flag != nil:
-		return fmt.Sprintf("(%s(%s): %s", e.FlagSet.Name, e.Flag, e.error.Error())
+		return fmt.Sprintf("%s:%s: %s", e.FlagSet, e.Flag, e.error.Error())
 	case e.FlagSet != nil:
-		return fmt.Sprintf("(%s: %s", e.FlagSet.Name, e.error.Error())
+		return fmt.Sprintf("%s: %s", e.FlagSet, e.error.Error())
 	default:
 		return e.Error()
 	}
