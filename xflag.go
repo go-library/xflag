@@ -270,11 +270,11 @@ func (f *FlagSet) Parse(arguments []string) (err error) {
 	}
 
 	subArgs := f.Args()
-	if len(subArgs) >= 1 {
+	if len(f.Commands) > 0 && len(subArgs) >= 1 {
 		f.CommandName = subArgs[0]
 		subArgs = subArgs[1:]
 		if _, ok := f.Commands[f.CommandName]; !ok {
-			err = Errorf(f, nil, 0, "*there is no matched flagset: %v", f.CommandName)
+			err = Errorf(f, nil, 0, "there is no matched sub flagset: %v", f.CommandName)
 			f.CommandName = ""
 			return
 		}
