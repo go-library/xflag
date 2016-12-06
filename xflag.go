@@ -3,8 +3,10 @@ package xflag
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
+	"unsafe"
 )
 
 type Value interface {
@@ -47,8 +49,101 @@ func NewFlagSet(name string) (fs *FlagSet) {
 	return f
 }
 
+func canFlagValue(v reflect.Value) (ok bool) {
+	var fv *Value
+	t := reflect.TypeOf(fv).Elem()
+	return v.Type().Implements(t)
+}
+
+func (f *FlagSet) Bind(ifaceValue interface{}, short, long, defValue, help string) (err error) {
+	// for pointer
+	v := reflect.ValueOf(ifaceValue)
+
+	if v.Kind() != reflect.Ptr {
+		return Errorf(f, nil, 0, "input value is not pointer type")
+	}
+
+	if v.IsNil() {
+		return Errorf(f, nil, 0, "pointer field is nil")
+	}
+
+	v = v.Elem()
+
+	ptr := v.UnsafeAddr()
+
+	typeName := fmt.Sprintf("%s/%s", v.Type().PkgPath(), v.Type().Name())
+	kind := v.Kind()
+
+	var value Value
+	switch {
+	// interface Value
+	case canFlagValue(v):
+		value = v.Interface().(Value)
+	// time.Duration
+	case typeName == "time/Duration":
+		value = (*durationValue)(unsafe.Pointer(ptr))
+	// bool
+	case kind == reflect.Bool:
+		value = (*boolValue)(unsafe.Pointer(ptr))
+	// flat64
+	case kind == reflect.Float64:
+		value = (*float64Value)(unsafe.Pointer(ptr))
+	// int
+	case kind == reflect.Int:
+		value = (*intValue)(unsafe.Pointer(ptr))
+	// int64
+	case kind == reflect.Int64:
+		value = (*int64Value)(unsafe.Pointer(ptr))
+	// uint
+	case kind == reflect.Uint:
+		value = (*uintValue)(unsafe.Pointer(ptr))
+	// uint64
+	case kind == reflect.Uint64:
+		value = (*uint64Value)(unsafe.Pointer(ptr))
+	// string
+	case kind == reflect.String:
+		value = (*stringValue)(unsafe.Pointer(ptr))
+	// []bool
+	case kind == reflect.Slice && v.Type().Elem().Kind() == reflect.Bool:
+		value = (*boolSliceValue)(unsafe.Pointer(ptr))
+	// []string
+	case kind == reflect.Slice && v.Type().Elem().Kind() == reflect.String:
+		value = (*stringSliceValue)(unsafe.Pointer(ptr))
+	// error
+	default:
+		return Errorf(f, nil, 0, "unsupported type: %v", v.Type())
+	}
+
+	err = f.setValue(value, short, long, defValue, help)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // set Value as flag
-func (f *FlagSet) Var(value Value, short, long, defValue, metaVar, help string) (err error) {
+func (f *FlagSet) setValue(value Value, short, long, defValue, help string) (err error) {
+	var metaVar string
+
+	if strings.HasPrefix(short, "-") {
+		short = short[1:]
+	}
+
+	if len(short) > 1 {
+		metaVar = strings.TrimSpace(short[1:])
+		short = short[:1]
+	}
+
+	if strings.HasPrefix(long, "--") {
+		long = long[2:]
+	}
+
+	if i := strings.IndexAny(long, "= "); i != -1 {
+		metaVar = long[i+1:]
+		long = long[:i]
+	}
+
 	flag := &Flag{
 		Short:    short,
 		Long:     long,
@@ -60,21 +155,37 @@ func (f *FlagSet) Var(value Value, short, long, defValue, metaVar, help string) 
 	}
 
 	if short == "" && long == "" {
-		return fmt.Errorf("%s FlagSet name undefined", f.Name)
+		return Errorf(f, flag, 0, "flag name undefined")
 	}
 
 	if short != "" {
 		if _, has := f.shortFlags[short]; has {
-			return fmt.Errorf("%s FlagSet redefined: %s", f.Name, short)
+			return Errorf(f, flag, 0, "short flag redefined")
 		}
 		f.shortFlags[short] = flag
 	}
 
 	if long != "" {
 		if _, has := f.longFlags[long]; has {
-			return fmt.Errorf("%s FlagSet redefined: %s", f.Name, long)
+			return Errorf(f, flag, 0, "long flag redefined")
 		}
 		f.longFlags[long] = flag
+	}
+
+	return nil
+}
+
+func (f *FlagSet) Flag(name string) *Flag {
+	if strings.HasPrefix(name, "--") {
+		name = name[2:]
+	} else if strings.HasPrefix(name, "-") {
+		name = name[1:]
+	}
+
+	if flag, ok := f.longFlags[name]; ok {
+		return flag
+	} else if flag, ok := f.shortFlags[name]; ok {
+		return flag
 	}
 
 	return nil
@@ -129,7 +240,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 
 		switch {
 		case window[0] == "-h" || window[0] == "--help":
-			return NewError(f, nil, ERR_HELP_REQUESTED, nil)
+			return Errorf(f, nil, ERR_HELP_REQUESTED, "")
 
 		case window[0] == "--":
 			// -- terminator
@@ -143,7 +254,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return NewError(f, nil, ERR_UNDEFINED, fmt.Errorf("--%s flag is undefined", name))
+				return Errorf(f, nil, ERR_UNDEFINED, "--%s flag is undefined", name)
 			}
 
 			// check boolean field
@@ -167,7 +278,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return NewError(f, flag, ERR_EMPTY_VALUE, fmt.Errorf("--%s flag value was not provied", name))
+				return Errorf(f, flag, ERR_EMPTY_VALUE, "--%s flag value was not provied", name)
 			}
 
 			// set Value
@@ -190,7 +301,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return NewError(f, nil, ERR_UNDEFINED, fmt.Errorf("-%s flag is undefined", name))
+					return Errorf(f, nil, ERR_UNDEFINED, "-%s flag is undefined", name)
 				}
 
 				// check boolean field
@@ -215,7 +326,7 @@ func (f *FlagSet) Parse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return NewError(f, flag, ERR_EMPTY_VALUE, fmt.Errorf("-%s flag value was not provided", name))
+					return Errorf(f, flag, ERR_EMPTY_VALUE, "-%s flag value was not provided", name)
 				}
 
 				// set value
@@ -373,11 +484,16 @@ func splitHelp(help string) (lines []string) {
 }
 
 func (f *FlagSet) Completions(arguments []string) (completions []string) {
-	var (
-		err error
-	)
+	// use prev completor
+	if 1 < len(arguments) {
+		prev := arguments[len(arguments)-2]
+		if f.Flag(prev) != nil && f.Flag(prev).Completor != nil {
+			completions = append(completions, f.Flag(prev).Completor(arguments)...)
+		}
+	}
 
-	appendFlags := func() {
+	// default
+	if completions == nil {
 		f.Visit(func(flag *Flag) (err error) {
 			if flag.Short != "" {
 				completions = append(completions, fmt.Sprintf("-%s ", flag.Short))
@@ -391,26 +507,5 @@ func (f *FlagSet) Completions(arguments []string) (completions []string) {
 		})
 	}
 
-	err = f.Parse(arguments)
-	if err, ok := err.(*Error); ok {
-		switch err.Code {
-		case ERR_HELP_REQUESTED:
-			return
-		case ERR_UNDEFINED:
-			appendFlags()
-			return
-		case ERR_EMPTY_VALUE:
-			if err.Flag.Completor != nil {
-				compls := err.Flag.Completor(arguments)
-				completions = append(completions, compls...)
-			}
-			return
-		default:
-			appendFlags()
-			return
-		}
-	}
-
-	appendFlags()
 	return
 }

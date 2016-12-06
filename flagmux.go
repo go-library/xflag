@@ -55,7 +55,7 @@ func (m *FlagSetMux) Parse(arguments []string) (err error) {
 		subArgs = subArgs[1:]
 		if _, ok := m.Commands[m.CommandName]; !ok {
 			m.CommandName = ""
-			return fmt.Errorf("there is no matched flagset: %v", m.CommandName)
+			return Errorf(m.FlagSet, nil, 0, "there is no matched flagset: %v", m.CommandName)
 		}
 
 		err = m.Commands[m.CommandName].Parse(subArgs)
@@ -78,7 +78,11 @@ func (m *FlagSetMux) Completions(arguments []string) (completions []string) {
 			}
 		}
 	} else {
-		completions = m.Commands[m.CommandName].Completions(m.FlagSet.Args()[1:])
+		if arguments[len(arguments)-1] == m.CommandName {
+			completions = []string{m.CommandName}
+		} else {
+			completions = m.Commands[m.CommandName].Completions(m.FlagSet.Args()[1:])
+		}
 	}
 
 	return

@@ -8,13 +8,13 @@ import (
 func TestXFlagParseIndirect(t *testing.T) {
 	{
 		type Opt struct {
-			number *int
+			Number *int
 		}
 
 		var number int
 
 		opt := &Opt{
-			number: &number,
+			Number: &number,
 		}
 		fs, err := NewFlagSetFromStruct("opt", opt)
 		if err != nil {
@@ -38,7 +38,7 @@ func TestXFlagParseIndirect(t *testing.T) {
 func TestXFlagParse(t *testing.T) {
 	{
 		type Opt struct {
-			duration time.Duration
+			Duration time.Duration
 		}
 
 		opt := &Opt{}
@@ -55,14 +55,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.duration != time.Minute*10 {
+		if opt.Duration != time.Minute*10 {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			duration time.Duration
+			Duration time.Duration
 		}
 
 		opt := &Opt{}
@@ -79,14 +79,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.duration != time.Minute*10 {
+		if opt.Duration != time.Minute*10 {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			ok bool
+			OK bool
 		}
 
 		opt := &Opt{}
@@ -103,14 +103,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.ok != true {
+		if opt.OK != true {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			ok bool
+			OK bool
 		}
 
 		opt := &Opt{}
@@ -127,14 +127,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.ok != true {
+		if opt.OK != true {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			v bool `xflag:"v,verbose"`
+			V bool `xflag:"v,verbose"`
 		}
 
 		opt := &Opt{}
@@ -151,14 +151,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.v != true {
+		if opt.V != true {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			str string `xflag:"s"`
+			Str string `xflag:"s"`
 		}
 
 		opt := &Opt{}
@@ -175,14 +175,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.str != "Input" {
+		if opt.Str != "Input" {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			str string `xflag:"s"`
+			Str string `xflag:"s"`
 		}
 
 		opt := &Opt{}
@@ -199,14 +199,14 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if opt.str != "Input" {
+		if opt.Str != "Input" {
 			t.Error("value are incorrect")
 		}
 	}
 
 	{
 		type Opt struct {
-			v []bool `xflag:"v"`
+			V []bool `xflag:"v"`
 		}
 
 		opt := &Opt{}
@@ -223,7 +223,7 @@ func TestXFlagParse(t *testing.T) {
 			t.Error(err)
 		}
 
-		if len(opt.v) != 3 {
+		if len(opt.V) != 3 {
 			t.Error("value are incorrect")
 		}
 	}

@@ -13,6 +13,7 @@ type Completer interface {
 }
 
 func HelpCompletion(c Completer) {
+
 	envs := os.Environ()
 	for i := range envs {
 		if strings.HasPrefix(envs[i], "XFLAG_COMPLETION=1") {
@@ -35,7 +36,7 @@ function _{{.base}}(){
   COMPREPLY=()
   CURL="${COMP_WORDS[COMP_CWORD]}"
   PREV="${COMP_WORDS[COMP_CWORD-1]}"
-  OPTS=$(sh -c "XFLAG_COMPLETION=1 ${COMP_WORDS[*]}")
+  OPTS=$(XFLAG_COMPLETION=1 "${COMP_WORDS[@]}")
   COMPREPLY=( $(compgen -W "${OPTS}" -- ${CURL}) )
   return 0
 }

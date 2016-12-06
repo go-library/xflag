@@ -6,7 +6,7 @@ import (
 
 func TestFlagSetMux(t *testing.T) {
 	type Opt struct {
-		verbose bool
+		Verbose bool
 	}
 
 	m := &FlagSetMux{}
@@ -19,7 +19,7 @@ func TestFlagSetMux(t *testing.T) {
 	m.Init(fs)
 
 	type SubCommand struct {
-		enable bool
+		Enable bool
 	}
 
 	subfs, err := NewFlagSetFromStruct("command1", &SubCommand{})

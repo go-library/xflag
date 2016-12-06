@@ -6,6 +6,12 @@ import (
 
 type ErrorCode uint
 
+const (
+	ERR_HELP_REQUESTED ErrorCode = iota
+	ERR_UNDEFINED
+	ERR_EMPTY_VALUE
+)
+
 type Error struct {
 	error
 	Code    ErrorCode
@@ -13,17 +19,9 @@ type Error struct {
 	Flag    *Flag
 }
 
-type ErrorReason string
-
-const (
-	ERR_HELP_REQUESTED ErrorCode = iota
-	ERR_UNDEFINED
-	ERR_EMPTY_VALUE
-)
-
-func NewError(fs *FlagSet, flag *Flag, code ErrorCode, err error) error {
+func Errorf(fs *FlagSet, flag *Flag, code ErrorCode, format string, args ...interface{}) error {
 	return &Error{
-		error:   err,
+		error:   fmt.Errorf(format, args...),
 		Code:    code,
 		FlagSet: fs,
 		Flag:    flag,
@@ -33,9 +31,9 @@ func NewError(fs *FlagSet, flag *Flag, code ErrorCode, err error) error {
 func (e *Error) Error() string {
 	switch {
 	case e.FlagSet != nil && e.Flag != nil:
-		return fmt.Sprintf("(%s(%s): %s", e.FlagSet.Name, e.Flag, e.Error())
+		return fmt.Sprintf("(%s(%s): %s", e.FlagSet.Name, e.Flag, e.error.Error())
 	case e.FlagSet != nil:
-		return fmt.Sprintf("(%s: %s", e.FlagSet.Name, e.Error())
+		return fmt.Sprintf("(%s: %s", e.FlagSet.Name, e.error.Error())
 	default:
 		return e.Error()
 	}
