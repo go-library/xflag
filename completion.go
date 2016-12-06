@@ -12,7 +12,7 @@ type Completer interface {
 	Completions(arguments []string) (completions []string)
 }
 
-func HelpCompletion(c Completer) {
+func InitCompletion(c Completer) {
 
 	envs := os.Environ()
 	for i := range envs {
@@ -21,13 +21,13 @@ func HelpCompletion(c Completer) {
 			os.Exit(0)
 		}
 		if strings.HasPrefix(envs[i], "XFLAG_COMPLETION_SCRIPT=1") {
-			PrintBashScript()
+			printBashScript()
 			os.Exit(0)
 		}
 	}
 }
 
-func PrintBashScript() {
+func printBashScript() {
 	templ := `
 CMD="{{.ori}}"
 

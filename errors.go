@@ -19,7 +19,7 @@ type Error struct {
 	Flag    *Flag
 }
 
-func Errorf(fs *FlagSet, flag *Flag, code ErrorCode, format string, args ...interface{}) error {
+func Errorf(fs *FlagSet, flag *Flag, code ErrorCode, format string, args ...interface{}) *Error {
 	return &Error{
 		error:   fmt.Errorf(format, args...),
 		Code:    code,
@@ -56,12 +56,7 @@ func PrintHelp(err error) {
 	}
 }
 
-func IsFlagError(err error) bool {
-	_, ok := err.(*Error)
-	return ok
-}
-
-func GetFlagError(err error) *Error {
+func GetError(err error) *Error {
 	if err, ok := err.(*Error); ok {
 		return err
 	}
