@@ -41,8 +41,8 @@ type FlagSet struct {
 	Name string
 
 	// for sub-command
-	CommandName string
-	Commands    map[string]*FlagSet
+	cmdName string
+	cmdSet  map[string]*FlagSet
 
 	// unexported variables
 	shortFlags map[string]*Flag
@@ -51,13 +51,13 @@ type FlagSet struct {
 }
 
 func (f *FlagSet) PrintHelp() {
-	fmt.Fprintf(os.Stderr, "Help of %s:\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 	f.PrintDefaults()
 
-	if len(f.Commands) > 0 {
-		fmt.Fprintf(os.Stderr, "\n  Commands:\n")
+	if len(f.cmdSet) > 0 {
+		fmt.Fprintf(os.Stderr, "\n  cmdSet:\n")
 		var cmds []string
-		for cmd := range f.Commands {
+		for cmd := range f.cmdSet {
 			cmds = append(cmds, cmd)
 		}
 		sort.Sort(sort.StringSlice(cmds))
@@ -67,12 +67,12 @@ func (f *FlagSet) PrintHelp() {
 	}
 }
 
-func (f *FlagSet) AddFlagSet(sub *FlagSet) {
-	if f.Commands == nil {
-		f.Commands = make(map[string]*FlagSet)
+func (f *FlagSet) AddSubCommand(sub *FlagSet) {
+	if f.cmdSet == nil {
+		f.cmdSet = make(map[string]*FlagSet)
 	}
 
-	f.Commands[sub.Name] = sub
+	f.cmdSet[sub.Name] = sub
 }
 
 func canFlagValue(v reflect.Value) (ok bool) {
@@ -85,7 +85,7 @@ func (f *FlagSet) String() string {
 	return fmt.Sprintf("FlagSet[%s]", f.Name)
 }
 
-func (f *FlagSet) Bind(ifaceValue interface{}, short, long, defValue, help string) (err error) {
+func (f *FlagSet) BindVar(ifaceValue interface{}, short, long, defValue, help string) (err error) {
 	// for pointer
 	v := reflect.ValueOf(ifaceValue)
 
@@ -144,7 +144,7 @@ func (f *FlagSet) Bind(ifaceValue interface{}, short, long, defValue, help strin
 		return Errorf(f, nil, 0, "unsupported type: %v", v.Type())
 	}
 
-	err = f.setValue(value, short, long, defValue, help)
+	err = f.setFlag(value, short, long, defValue, help)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (f *FlagSet) Bind(ifaceValue interface{}, short, long, defValue, help strin
 }
 
 // set Value as flag
-func (f *FlagSet) setValue(value Value, short, long, defValue, help string) (err error) {
+func (f *FlagSet) setFlag(value Value, short, long, defValue, help string) (err error) {
 	if f.shortFlags == nil {
 		f.shortFlags = make(map[string]*Flag)
 	}
@@ -256,6 +256,10 @@ func (f *FlagSet) Visit(fn func(*Flag) error) error {
 	return nil
 }
 
+func (f *FlagSet) SubCommandName() (name string) {
+	return f.cmdName
+}
+
 // parse arguments
 // -f           // only boolean
 // -fvalue      // without boolean
@@ -270,18 +274,15 @@ func (f *FlagSet) Parse(arguments []string) (err error) {
 	}
 
 	subArgs := f.Args()
-	if len(f.Commands) > 0 && len(subArgs) >= 1 {
-		f.CommandName = subArgs[0]
+	if len(f.cmdSet) > 0 && len(subArgs) >= 1 {
+		firstArg := subArgs[0]
 		subArgs = subArgs[1:]
-		if _, ok := f.Commands[f.CommandName]; !ok {
-			err = Errorf(f, nil, 0, "there is no matched sub flagset: %v", f.CommandName)
-			f.CommandName = ""
-			return
-		}
-
-		err = f.Commands[f.CommandName].Parse(subArgs)
-		if err != nil {
-			return err
+		if activeCommand, ok := f.cmdSet[firstArg]; ok {
+			f.cmdName = firstArg
+			err = activeCommand.Parse(subArgs)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -306,7 +307,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 
 		switch {
 		case window[0] == "-h" || window[0] == "--help":
-			return Errorf(f, nil, ERR_HELP_REQUESTED, "")
+			return Errorf(f, nil, HELP_REQUESTED, "")
 
 		case window[0] == "--":
 			// -- terminator
@@ -320,7 +321,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return Errorf(f, nil, ERR_UNDEFINED, "--%s flag is undefined", name)
+				return Errorf(f, nil, PARSE_ERROR_UNDEFINED_FLAG, "--%s flag is undefined", name)
 			}
 
 			// check boolean field
@@ -344,7 +345,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return Errorf(f, flag, ERR_EMPTY_VALUE, "--%s flag value was not provied", name)
+				return Errorf(f, flag, PARSE_ERROR_EMPTY_VALUE, "--%s flag value was not provied", name)
 			}
 
 			// set Value
@@ -367,7 +368,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return Errorf(f, nil, ERR_UNDEFINED, "-%s flag is undefined", name)
+					return Errorf(f, nil, PARSE_ERROR_UNDEFINED_FLAG, "-%s flag is undefined", name)
 				}
 
 				// check boolean field
@@ -392,7 +393,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return Errorf(f, flag, ERR_EMPTY_VALUE, "-%s flag value was not provided", name)
+					return Errorf(f, flag, PARSE_ERROR_EMPTY_VALUE, "-%s flag value was not provided", name)
 				}
 
 				// set value
@@ -547,60 +548,4 @@ func splitHelp(help string) (lines []string) {
 	}
 
 	return lines
-}
-
-func (f *FlagSet) Completions(arguments []string) (completions []string) {
-	cmdComplete := func(args []string) (compl []string) {
-		// use prev completor
-		if 1 < len(args) {
-			prev := args[len(args)-2]
-			if f.Flag(prev) != nil {
-				flag := f.Flag(prev)
-				if boolFlag, ok := flag.Value.(boolTypeFlag); !ok || !boolFlag.IsBool() {
-					// common flag
-					if flag.Completor != nil {
-						compl = append(compl, f.Flag(prev).Completor(args)...)
-					}
-					return
-				}
-			}
-		}
-
-		// default
-		if compl == nil {
-			f.Visit(func(flag *Flag) (err error) {
-				if flag.Short != "" {
-					compl = append(compl, fmt.Sprintf("-%s ", flag.Short))
-				}
-
-				if flag.Long != "" {
-					compl = append(compl, fmt.Sprintf("--%s ", flag.Long))
-				}
-
-				return nil
-			})
-		}
-
-		return
-	}
-
-	f.Parse(arguments)
-
-	if f.CommandName == "" {
-		completions = cmdComplete(arguments)
-		if len(completions) > 0 {
-			for cmd := range f.Commands {
-				completions = append(completions, cmd)
-			}
-		}
-	} else {
-		if arguments[len(arguments)-1] == f.CommandName {
-			completions = []string{f.CommandName}
-		} else {
-			completions = f.Commands[f.CommandName].Completions(f.Args()[1:])
-		}
-	}
-
-	return
-
 }

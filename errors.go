@@ -7,9 +7,9 @@ import (
 type ErrorCode uint
 
 const (
-	ERR_HELP_REQUESTED ErrorCode = iota
-	ERR_UNDEFINED
-	ERR_EMPTY_VALUE
+	HELP_REQUESTED ErrorCode = iota
+	PARSE_ERROR_UNDEFINED_FLAG
+	PARSE_ERROR_EMPTY_VALUE
 )
 
 type Error struct {
@@ -39,26 +39,29 @@ func (e *Error) Error() string {
 	}
 }
 
-func IsHelpRequest(err error) bool {
-	if err, ok := err.(*Error); ok {
-		if err.Code == ERR_HELP_REQUESTED {
-			return true
-		}
-	}
-	return false
-}
-
-func PrintHelp(err error) {
-	if err, ok := err.(*Error); ok {
-		if err.Code == ERR_HELP_REQUESTED {
-			err.FlagSet.PrintHelp()
-		}
-	}
-}
-
 func GetError(err error) *Error {
 	if err, ok := err.(*Error); ok {
 		return err
 	}
 	return nil
+}
+
+func GetErrorCode(err error) ErrorCode {
+	if err := GetError(err); err != nil {
+		return err.Code
+	}
+	return 0
+}
+
+func PrintHelp(err error) {
+	if err := GetError(err); err != nil {
+		err.FlagSet.PrintHelp()
+	}
+}
+
+func IsHelpRequest(err error) bool {
+	if GetErrorCode(err) == HELP_REQUESTED {
+		return true
+	}
+	return false
 }

@@ -8,16 +8,12 @@ import (
 	"text/template"
 )
 
-type Completer interface {
-	Completions(arguments []string) (completions []string)
-}
-
-func InitCompletion(c Completer) {
+func InitCompletion(f *FlagSet) {
 
 	envs := os.Environ()
 	for i := range envs {
 		if strings.HasPrefix(envs[i], "XFLAG_COMPLETION=1") {
-			fmt.Println(strings.Join(c.Completions(os.Args[1:]), " "))
+			fmt.Println(strings.Join(genComplWords(f, os.Args[1:]), " "))
 			os.Exit(0)
 		}
 		if strings.HasPrefix(envs[i], "XFLAG_COMPLETION_SCRIPT=1") {
@@ -48,4 +44,62 @@ complete -F _{{.base}} $CMD
 
 	t := template.Must(template.New("script").Parse(templ))
 	t.Execute(os.Stdout, data)
+}
+
+func genComplWords(f *FlagSet, arguments []string) (completions []string) {
+	cmdComplete := func(args []string) (compl []string) {
+		// use prev completor
+		if 1 < len(args) {
+			prev := args[len(args)-2]
+			if f.Flag(prev) != nil {
+				flag := f.Flag(prev)
+				if boolFlag, ok := flag.Value.(boolTypeFlag); !ok || !boolFlag.IsBool() {
+					// common flag
+					if flag.Completor != nil {
+						compl = append(compl, f.Flag(prev).Completor(args)...)
+					}
+					return
+				}
+			}
+		}
+
+		// default
+		if compl == nil {
+			f.Visit(func(flag *Flag) (err error) {
+				if flag.Short != "" {
+					compl = append(compl, fmt.Sprintf("-%s ", flag.Short))
+				}
+
+				if flag.Long != "" {
+					compl = append(compl, fmt.Sprintf("--%s ", flag.Long))
+				}
+
+				return nil
+			})
+		}
+
+		return
+	}
+
+	f.Parse(arguments)
+
+	// self completion
+	if f.cmdName == "" {
+		completions = cmdComplete(arguments)
+		if len(completions) > 0 {
+			for cmd := range f.cmdSet {
+				completions = append(completions, cmd)
+			}
+		}
+		// sub command completion
+	} else {
+		if arguments[len(arguments)-1] == f.cmdName {
+			completions = []string{f.cmdName}
+		} else {
+			completions = genComplWords(f.cmdSet[f.cmdName], f.Args()[1:])
+		}
+	}
+
+	return
+
 }

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (f *FlagSet) BindFromStruct(opt interface{}) (err error) {
+func (f *FlagSet) BindStruct(opt interface{}) (err error) {
 	optValue := reflect.ValueOf(opt)
 	if optValue.Kind() != reflect.Ptr {
 		return Errorf(nil, nil, 0, "input agrument opt is not pointer of struct")
@@ -57,7 +57,7 @@ func (f *FlagSet) BindFromStruct(opt interface{}) (err error) {
 			fieldValue = fieldValue.Addr()
 		}
 
-		err = f.Bind(fieldValue.Interface(), short, long, defValue, help)
+		err = f.BindVar(fieldValue.Interface(), short, long, defValue, help)
 		if err != nil {
 			return err
 		}
