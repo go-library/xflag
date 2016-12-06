@@ -32,12 +32,10 @@ func printBashScript() {
 CMD="{{.ori}}"
 
 function _{{.base}}(){
-  local cur prev opts
-  COMPREPLY=()
-  CURL="${COMP_WORDS[COMP_CWORD]}"
-  PREV="${COMP_WORDS[COMP_CWORD-1]}"
-  OPTS=$(XFLAG_COMPLETION=1 "${COMP_WORDS[@]}")
-  COMPREPLY=( $(compgen -W "${OPTS}" -- ${CURL}) )
+  local cur prev cword words
+	_get_comp_words_by_ref -n =: cur words
+  OPTS=($(XFLAG_COMPLETION=1 "${words[@]}"))
+  COMPREPLY=($(compgen -W "${OPTS[*]}" -- ${cur}))
   return 0
 }
 
