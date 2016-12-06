@@ -16,7 +16,9 @@ func TestXFlagParseIndirect(t *testing.T) {
 		opt := &Opt{
 			Number: &number,
 		}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -42,7 +44,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,7 +69,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,7 +94,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -114,7 +119,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -138,7 +144,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -162,7 +169,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -186,7 +194,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -210,7 +219,8 @@ func TestXFlagParse(t *testing.T) {
 		}
 
 		opt := &Opt{}
-		fs, err := NewFlagSetFromStruct("opt", opt)
+		fs := &FlagSet{Name: "opt"}
+		err := fs.BindFromStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
