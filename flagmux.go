@@ -9,25 +9,23 @@ import (
 // FlagSet Extented Type
 type FlagSetMux struct {
 	*FlagSet
-
 	CommandName string
 	Commands    map[string]*FlagSet
+	_printHelp  func()
 }
 
 func (m *FlagSetMux) Init(fs *FlagSet) {
 	m.FlagSet = fs
-	m.PrintHelp = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		m.PrintDefaults()
-
+	// change help
+	m._printHelp = m.FlagSet.PrintHelp
+	m.FlagSet.PrintHelp = func() {
+		m._printHelp()
+		fmt.Fprintf(os.Stderr, "\n  Commands:\n")
 		var cmds []string
 		for cmd := range m.Commands {
 			cmds = append(cmds, cmd)
 		}
-
 		sort.Sort(sort.StringSlice(cmds))
-
-		fmt.Fprintf(os.Stderr, "\n  Commands:\n")
 		for _, cmd := range cmds {
 			fmt.Fprintf(os.Stderr, "    - %s\n", cmd)
 		}

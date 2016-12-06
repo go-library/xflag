@@ -160,6 +160,10 @@ func (f *FlagSet) setValue(value Value, short, long, defValue, help string) (err
 		long = long[:i]
 	}
 
+	if metaVar == "" {
+		metaVar = "VALUE"
+	}
+
 	flag := &Flag{
 		Short:    short,
 		Long:     long,
