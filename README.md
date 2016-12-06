@@ -1,4 +1,8 @@
 
+# DOC
+
+https://godoc.org/github.com/go-library/xflag
+
 # XFLAG - Extened Flag
 Command line parser
 

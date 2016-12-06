@@ -5,21 +5,18 @@ import (
 	"strings"
 )
 
-func NewFlagSetFromStruct(name string, opt interface{}) (fs *FlagSet, err error) {
-
+func (f *FlagSet) BindFromStruct(opt interface{}) (err error) {
 	optValue := reflect.ValueOf(opt)
 	if optValue.Kind() != reflect.Ptr {
-		return nil, Errorf(nil, nil, 0, "input agrument opt is not pointer of struct")
+		return Errorf(nil, nil, 0, "input agrument opt is not pointer of struct")
 	}
 
 	optValue = optValue.Elem()
 	if optValue.Kind() != reflect.Struct {
-		return nil, Errorf(nil, nil, 0, "input agrument opt is not struct")
+		return Errorf(nil, nil, 0, "input agrument opt is not struct")
 	}
 
 	t := optValue.Type()
-
-	fs = NewFlagSet(name)
 
 	for i := 0; i < t.NumField(); i++ {
 		var (
@@ -60,12 +57,11 @@ func NewFlagSetFromStruct(name string, opt interface{}) (fs *FlagSet, err error)
 			fieldValue = fieldValue.Addr()
 		}
 
-		err = fs.Bind(fieldValue.Interface(), short, long, defValue, help)
+		err = f.Bind(fieldValue.Interface(), short, long, defValue, help)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return fs, nil
-
+	return nil
 }
