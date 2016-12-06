@@ -485,10 +485,21 @@ func splitHelp(help string) (lines []string) {
 
 func (f *FlagSet) Completions(arguments []string) (completions []string) {
 	// use prev completor
+
 	if 1 < len(arguments) {
 		prev := arguments[len(arguments)-2]
-		if f.Flag(prev) != nil && f.Flag(prev).Completor != nil {
-			completions = append(completions, f.Flag(prev).Completor(arguments)...)
+		if f.Flag(prev) != nil {
+			flag := f.Flag(prev)
+			if boolFlag, ok := flag.Value.(boolTypeFlag); ok && boolFlag.IsBool() {
+				// boolean flag
+				// show all flags
+			} else {
+				// common flag
+				if flag.Completor != nil {
+					completions = append(completions, f.Flag(prev).Completor(arguments)...)
+				}
+				return
+			}
 		}
 	}
 
