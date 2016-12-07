@@ -44,6 +44,9 @@ type FlagSet struct {
 	cmdName string
 	cmdSet  map[string]*FlagSet
 
+	// enable auto completion
+	EnableCompletion bool
+
 	// unexported variables
 	shortFlags map[string]*Flag
 	longFlags  map[string]*Flag
@@ -268,6 +271,12 @@ func (f *FlagSet) SubCommandName() (name string) {
 // --flag=value // any type
 // --flag value // without boolean
 func (f *FlagSet) Parse(arguments []string) (err error) {
+	defer func() {
+		if f.EnableCompletion {
+			doCompletion(f)
+		}
+	}()
+
 	err = f.flagParse(arguments)
 	if err != nil {
 		return err
@@ -285,6 +294,7 @@ func (f *FlagSet) Parse(arguments []string) (err error) {
 			}
 		}
 	}
+
 	return nil
 }
 

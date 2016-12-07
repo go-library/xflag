@@ -8,7 +8,7 @@ import (
 	"text/template"
 )
 
-func InitCompletion(f *FlagSet) {
+func doCompletion(f *FlagSet) {
 
 	envs := os.Environ()
 	for i := range envs {
@@ -81,7 +81,7 @@ func genComplWords(f *FlagSet, arguments []string) (completions []string) {
 		return
 	}
 
-	f.Parse(arguments)
+	//f.Parse(arguments)
 
 	// self completion
 	if f.cmdName == "" {
