@@ -48,52 +48,63 @@ complete -F _{{.base}} $CMD
 }
 
 func genComplWords(f *FlagSet, arguments []string) (completions []string) {
-	cmdComplete := func(args []string) (compl []string) {
-		// use prev-flag completor
-		if 1 < len(args) {
-			prev := args[len(args)-2]
+	var (
+		words = arguments
+		cword = len(words) - 1
+		cur   string
+		prev  string
+	)
+
+	if cword >= 0 {
+		cur = words[cword]
+	}
+	if cword >= 1 {
+		prev = words[cword-1]
+	}
+
+	cmdComplete := func() (compl []string) {
+		// comple parameter
+		if prev != "" {
 			if flag := f.Flag(prev); flag != nil {
-				// not bool type flag
 				if boolFlag, ok := flag.Value.(boolTypeFlag); !ok || !boolFlag.IsBool() {
 					if flag.Completor != nil {
-						compl = append(compl, f.Flag(prev).Completor(f.Args())...)
+						compl = append(compl, f.Flag(prev).Completor(words)...)
 					}
 					return
 				}
 			}
 		}
 
-		// append flags
-		f.Visit(func(flag *Flag) (err error) {
-			if flag.Short != "" {
-				compl = append(compl, fmt.Sprintf("-%s ", flag.Short))
+		if strings.HasPrefix(cur, "-") && len(f.Args()) < 2 {
+			// complete flag
+			f.Visit(func(flag *Flag) (err error) {
+				if flag.Short != "" {
+					compl = append(compl, fmt.Sprintf("-%s ", flag.Short))
+				}
+
+				if flag.Long != "" {
+					compl = append(compl, fmt.Sprintf("--%s ", flag.Long))
+				}
+
+				return
+			})
+		} else {
+			// complete argument
+			for cmd := range f.cmdSet {
+				compl = append(compl, cmd)
 			}
 
-			if flag.Long != "" {
-				compl = append(compl, fmt.Sprintf("--%s ", flag.Long))
+			if f.Completor != nil {
+				compl = append(compl, f.Completor(words)...)
 			}
-
-			return
-		})
-
-		// flagset completor
-		if f.Completor != nil {
-			compl = append(compl, f.Completor(f.Args())...)
 		}
 
 		return
 	}
 
-	//f.Parse(arguments)
-
 	// self completion
-	if f.cmdName == "" {
-		completions = cmdComplete(arguments)
-		if len(completions) > 0 {
-			for cmd := range f.cmdSet {
-				completions = append(completions, cmd)
-			}
-		}
+	if f.SubCommandName() == "" {
+		completions = cmdComplete()
 		// sub command completion
 	} else {
 		if arguments[len(arguments)-1] == f.cmdName {
