@@ -46,6 +46,8 @@ type FlagSet struct {
 
 	// enable auto completion
 	EnableCompletion bool
+	// auto completion helper
+	Completor func(args []string) (completes []string)
 
 	// unexported variables
 	shortFlags map[string]*Flag

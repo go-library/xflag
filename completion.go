@@ -32,6 +32,7 @@ function _{{.base}}(){
 	_get_comp_words_by_ref -n =: cur words
   OPTS=($(XFLAG_COMPLETION=1 "${words[@]}"))
   COMPREPLY=($(compgen -W "${OPTS[*]}" -- ${cur}))
+	__ltrim_colon_completions "$cur"
   return 0
 }
 
@@ -48,34 +49,36 @@ complete -F _{{.base}} $CMD
 
 func genComplWords(f *FlagSet, arguments []string) (completions []string) {
 	cmdComplete := func(args []string) (compl []string) {
-		// use prev completor
+		// use prev-flag completor
 		if 1 < len(args) {
 			prev := args[len(args)-2]
-			if f.Flag(prev) != nil {
-				flag := f.Flag(prev)
+			if flag := f.Flag(prev); flag != nil {
+				// not bool type flag
 				if boolFlag, ok := flag.Value.(boolTypeFlag); !ok || !boolFlag.IsBool() {
-					// common flag
 					if flag.Completor != nil {
-						compl = append(compl, f.Flag(prev).Completor(args)...)
+						compl = append(compl, f.Flag(prev).Completor(f.Args())...)
 					}
 					return
 				}
 			}
 		}
 
-		// default
-		if compl == nil {
-			f.Visit(func(flag *Flag) (err error) {
-				if flag.Short != "" {
-					compl = append(compl, fmt.Sprintf("-%s ", flag.Short))
-				}
+		// append flags
+		f.Visit(func(flag *Flag) (err error) {
+			if flag.Short != "" {
+				compl = append(compl, fmt.Sprintf("-%s ", flag.Short))
+			}
 
-				if flag.Long != "" {
-					compl = append(compl, fmt.Sprintf("--%s ", flag.Long))
-				}
+			if flag.Long != "" {
+				compl = append(compl, fmt.Sprintf("--%s ", flag.Long))
+			}
 
-				return nil
-			})
+			return
+		})
+
+		// flagset completor
+		if f.Completor != nil {
+			compl = append(compl, f.Completor(f.Args())...)
 		}
 
 		return
