@@ -4,12 +4,13 @@ import (
 	"fmt"
 )
 
-type ErrorCode uint
+type ErrorCode int
 
 const (
-	HELP_REQUESTED ErrorCode = iota
-	PARSE_ERROR_UNDEFINED_FLAG
-	PARSE_ERROR_EMPTY_VALUE
+	ERROR ErrorCode = iota
+	ERROR_HELP_REQUESTED
+	ERROR_UNDEFINED_FLAG
+	ERROR_EMPTY_VALUE
 )
 
 type Error struct {
@@ -39,7 +40,7 @@ func (e *Error) Error() string {
 	}
 }
 
-func GetError(err error) *Error {
+func getError(err error) *Error {
 	if err, ok := err.(*Error); ok {
 		return err
 	}
@@ -47,21 +48,14 @@ func GetError(err error) *Error {
 }
 
 func GetErrorCode(err error) ErrorCode {
-	if err := GetError(err); err != nil {
+	if err := getError(err); err != nil {
 		return err.Code
 	}
-	return 0
+	return -1
 }
 
 func PrintHelp(err error) {
-	if err := GetError(err); err != nil {
+	if err := getError(err); err != nil {
 		err.FlagSet.PrintHelp()
 	}
-}
-
-func IsHelpRequest(err error) bool {
-	if GetErrorCode(err) == HELP_REQUESTED {
-		return true
-	}
-	return false
 }

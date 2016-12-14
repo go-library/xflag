@@ -18,7 +18,7 @@ func TestXFlagParseIndirect(t *testing.T) {
 		}
 
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -45,7 +45,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +95,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -120,7 +120,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -145,7 +145,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -170,7 +170,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -195,7 +195,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -220,7 +220,7 @@ func TestXFlagParse(t *testing.T) {
 
 		opt := &Opt{}
 		fs := &FlagSet{Name: "opt"}
-		err := fs.BindFromStruct(opt)
+		err := fs.BindStruct(opt)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -38,7 +38,8 @@ func (f *Flag) String() string {
 }
 
 type FlagSet struct {
-	Name string
+	Name  string
+	Usage string
 
 	// for sub-command
 	cmdName string
@@ -56,18 +57,20 @@ type FlagSet struct {
 }
 
 func (f *FlagSet) PrintHelp() {
-	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n%s\n", os.Args[0], f.Usage)
+
+	fmt.Fprintf(os.Stderr, "Options:\n")
 	f.PrintDefaults()
 
 	if len(f.cmdSet) > 0 {
-		fmt.Fprintf(os.Stderr, "\n  cmdSet:\n")
+		fmt.Fprintf(os.Stderr, "\nCommands:\n")
 		var cmds []string
 		for cmd := range f.cmdSet {
 			cmds = append(cmds, cmd)
 		}
 		sort.Sort(sort.StringSlice(cmds))
 		for _, cmd := range cmds {
-			fmt.Fprintf(os.Stderr, "    - %s\n", cmd)
+			fmt.Fprintf(os.Stderr, "  %s\n", cmd)
 		}
 	}
 }
@@ -191,6 +194,10 @@ func (f *FlagSet) setFlag(value Value, short, long, defValue, help string) (err 
 		metaVar = "VALUE"
 	}
 
+	if long == "help" {
+		Errorf(f, nil, 0, "reserved flag name used: --help")
+	}
+
 	flag := &Flag{
 		Short:    short,
 		Long:     long,
@@ -294,6 +301,8 @@ func (f *FlagSet) Parse(arguments []string) (err error) {
 			if err != nil {
 				return err
 			}
+		} else {
+			return Errorf(f, nil, 0, "unkown command: %s", firstArg)
 		}
 	}
 
@@ -318,8 +327,8 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 		}
 
 		switch {
-		case window[0] == "-h" || window[0] == "--help":
-			return Errorf(f, nil, HELP_REQUESTED, "")
+		case window[0] == "--help":
+			return Errorf(f, nil, ERROR_HELP_REQUESTED, "")
 
 		case window[0] == "--":
 			// -- terminator
@@ -333,7 +342,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 			// get flag name
 			name = terms[0]
 			if flag, has = f.longFlags[name]; !has {
-				return Errorf(f, nil, PARSE_ERROR_UNDEFINED_FLAG, "--%s flag is undefined", name)
+				return Errorf(f, nil, ERROR_UNDEFINED_FLAG, "--%s flag is undefined", name)
 			}
 
 			// check boolean field
@@ -357,7 +366,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 				value = window[1]
 				shift = 2
 			} else {
-				return Errorf(f, flag, PARSE_ERROR_EMPTY_VALUE, "--%s flag value was not provied", name)
+				return Errorf(f, flag, ERROR_EMPTY_VALUE, "--%s flag value was not provied", name)
 			}
 
 			// set Value
@@ -380,7 +389,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 				// get flag
 				name = string(opt[0])
 				if flag, has = f.shortFlags[name]; !has {
-					return Errorf(f, nil, PARSE_ERROR_UNDEFINED_FLAG, "-%s flag is undefined", name)
+					return Errorf(f, nil, ERROR_UNDEFINED_FLAG, "-%s flag is undefined", name)
 				}
 
 				// check boolean field
@@ -405,7 +414,7 @@ func (f *FlagSet) flagParse(args []string) (err error) {
 					opt = opt[1:]
 					shift = 2
 				} else {
-					return Errorf(f, flag, PARSE_ERROR_EMPTY_VALUE, "-%s flag value was not provided", name)
+					return Errorf(f, flag, ERROR_EMPTY_VALUE, "-%s flag value was not provided", name)
 				}
 
 				// set value
@@ -447,11 +456,11 @@ func (f *FlagSet) Args() []string {
 	return f.args
 }
 
-type byName []*Flag
+type flagSortByName []*Flag
 
-func (a byName) Len() int      { return len(a) }
-func (a byName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a byName) Less(i, j int) bool {
+func (a flagSortByName) Len() int      { return len(a) }
+func (a flagSortByName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a flagSortByName) Less(i, j int) bool {
 	var (
 		istr, jstr string
 	)
@@ -481,9 +490,9 @@ func (f *FlagSet) PrintDefaults() {
 		return nil
 	})
 
-	sort.Sort(byName(flags))
+	sort.Sort(flagSortByName(flags))
 
-	fmt.Fprintf(os.Stderr, format, "-h  --help", "print this message")
+	fmt.Fprintf(os.Stderr, format, "    --help", "print this message")
 
 	var short, long, metaVar string
 	for _, f := range flags {
@@ -499,12 +508,12 @@ func (f *FlagSet) PrintDefaults() {
 		} else if f.Short != "" {
 			short = fmt.Sprintf("-%s", f.Short)
 		} else {
-			short = ""
+			short = "  "
 		}
 
 		// short flag name formating
 		if f.Long != "" && metaVar != "" {
-			long = fmt.Sprintf("--%s=%s", f.Long, metaVar)
+			long = fmt.Sprintf("--%s %s", f.Long, metaVar)
 		} else if f.Long != "" {
 			long = fmt.Sprintf("--%s", f.Long)
 		} else {
